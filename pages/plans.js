@@ -46,10 +46,10 @@ export default function Plans() {
             <div className="plan">
               <h3>Basic</h3>
               <p>300 images/month</p>
-              <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£4/month</p>
-              <p>£0.013 per image</p>
+              <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£2/month</p>
+              <p>£0.0067 per image</p>
               <p>Great for casual use</p>
-              <button onClick={() => alert('Basic plan - £4/month - Redirecting...')}>Subscribe</button>
+              <button onClick={() => alert('Basic plan - £2/month - Redirecting...')}>Subscribe</button>
             </div>
             
             <div className="plan" style={{border: '2px solid #00bfff', transform: 'scale(1.05)'}}>
@@ -58,19 +58,19 @@ export default function Plans() {
                 <p>Most Popular</p>
               </div>
               <p>800 images/month</p>
-              <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£8/month</p>
-              <p>£0.01 per image</p>
-              <p style={{color: '#00ff88', fontWeight: 'bold'}}>23% cheaper</p>
-              <button onClick={() => alert('Pro plan - £8/month - Redirecting...')}>Subscribe</button>
+              <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£5/month</p>
+              <p>£0.00625 per image</p>
+              <p style={{color: '#00ff88', fontWeight: 'bold'}}>7% cheaper</p>
+              <button onClick={() => alert('Pro plan - £5/month - Redirecting...')}>Subscribe</button>
             </div>
             
             <div className="plan">
               <h3>Unlimited</h3>
               <p>2,000 images/month</p>
-              <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£15/month</p>
-              <p>£0.0075 per image</p>
-              <p style={{color: '#00ff88', fontWeight: 'bold'}}>42% cheaper</p>
-              <button onClick={() => alert('Unlimited plan - £15/month - Redirecting...')}>Subscribe</button>
+              <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£10/month</p>
+              <p>£0.005 per image</p>
+              <p style={{color: '#00ff88', fontWeight: 'bold'}}>25% cheaper</p>
+              <button onClick={() => alert('Unlimited plan - £10/month - Redirecting...')}>Subscribe</button>
             </div>
           </div>
         </div>
@@ -84,11 +84,11 @@ export default function Plans() {
             </div>
             <div>
               <h4 style={{color: '#00bfff'}}>🚀 Regular Creator?</h4>
-              <p><strong>£8/month Pro</strong> - Best value for consistent image generation</p>
+              <p><strong>£5/month Pro</strong> - Best value for consistent image generation</p>
             </div>
             <div>
               <h4 style={{color: '#00bfff'}}>🏆 Power User?</h4>
-              <p><strong>£15/month Unlimited</strong> - Lowest cost per image for heavy usage</p>
+              <p><strong>£10/month Unlimited</strong> - Lowest cost per image for heavy usage</p>
             </div>
           </div>
         </div>
