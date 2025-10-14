@@ -18,7 +18,14 @@
     // Super fast page load
     function initPageLoad() {
         document.body.style.opacity = '1';
-        updateCreditDisplay();
+        
+        // Only show credits on specific pages
+        const currentPage = window.location.pathname;
+        const showCreditsOn = ['/generate', '/plans', '/'];
+        
+        if (showCreditsOn.some(page => currentPage === page || currentPage === page + '.html')) {
+            updateCreditDisplay();
+        }
     }
 
     // Update credit display
