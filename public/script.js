@@ -1,4 +1,4 @@
-// NavAI - Fast & Smooth Navigation
+// NavAI - Fast & Smooth Navigation with Credit System
 (() => {
     if (window._navaiScriptInitialized) return;
     window._navaiScriptInitialized = true;
@@ -6,9 +6,26 @@
     const qs = (selector) => document.querySelector(selector);
     const qsa = (selector) => Array.from(document.querySelectorAll(selector));
 
+    // User credits system
+    let userCredits = localStorage.getItem('navai_credits') || 10; // Start with 10 free credits
+
     // Super fast page load
     function initPageLoad() {
         document.body.style.opacity = '1';
+        updateCreditDisplay();
+    }
+
+    // Update credit display
+    function updateCreditDisplay() {
+        let creditDisplay = document.querySelector('.credit-display');
+        if (!creditDisplay) {
+            creditDisplay = document.createElement('div');
+            creditDisplay.className = 'credit-display';
+            creditDisplay.style.cssText = 'position: fixed; top: 90px; right: 20px; background: rgba(0,191,255,0.2); padding: 10px 15px; border-radius: 20px; color: #00bfff; font-weight: 600; border: 1px solid rgba(0,191,255,0.3); z-index: 1000; font-size: 14px;';
+            document.body.appendChild(creditDisplay);
+        }
+        creditDisplay.textContent = `�� ${userCredits} credits`;
+        creditDisplay.title = 'Images remaining this month';
     }
 
     // FAQ Accordion
@@ -72,6 +89,14 @@
 
         generateBtn.addEventListener('click', async (e) => {
             e.preventDefault();
+            
+            // Check credits
+            if (userCredits <= 0) {
+                alert('🎨 Out of credits! Upgrade your plan to generate more amazing images.');
+                window.location.href = '/plans';
+                return;
+            }
+            
             const prompt = promptBox.value.trim();
             
             if (!prompt) {
@@ -97,6 +122,11 @@
                     throw new Error(data.error || 'Generation failed');
                 }
 
+                // Deduct credit and update UI
+                userCredits--;
+                localStorage.setItem('navai_credits', userCredits);
+                updateCreditDisplay();
+                
                 // Show the REAL AI-generated image
                 if (outputImage) {
                     outputImage.src = data.imageUrl;
@@ -157,7 +187,7 @@
         initGenerate();
         initContactForm();
         
-        console.log('NavAI initialized with fast navigation 🚀');
+        console.log('NavAI initialized with credit system 🚀');
     });
 
 })();
