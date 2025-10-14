@@ -13,8 +13,8 @@ export default function Contact() {
         <nav>
           <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/plans">Plans</a></li>
             <li><a href="/about">About</a></li>
+            <li><a href="/plans">Plans</a></li>
             <li><a href="/contact" className="active">Contact</a></li>
           </ul>
         </nav>

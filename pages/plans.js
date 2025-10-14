@@ -13,8 +13,8 @@ export default function Plans() {
         <nav>
           <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/plans" className="active">Buy Credits</a></li>
             <li><a href="/about">About</a></li>
+            <li><a href="/plans" className="active">Plans</a></li>
             <li><a href="/contact">Contact</a></li>
           </ul>
         </nav>
@@ -55,24 +55,6 @@ export default function Plans() {
             <p>£0.003 per image</p>
             <p>Best price per image</p>
             <button onClick={() => alert('1,000 credits for £3 - Redirecting to payment...')}>Buy Now</button>
-          </div>
-        </div>
-        
-        <div style={{marginTop: '50px', background: 'rgba(0,191,255,0.1)', padding: '30px', borderRadius: '15px', maxWidth: '800px', margin: '50px auto 0'}}>
-          <h3 style={{color: '#00bfff', marginBottom: '20px'}}>Why NavAI is Insanely Cheap? 🤯</h3>
-          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', textAlign: 'left'}}>
-            <div>
-              <h4 style={{color: '#00bfff'}}>⚡ Lightning Fast</h4>
-              <p>1-2 seconds vs 30-60 seconds elsewhere</p>
-            </div>
-            <div>
-              <h4 style={{color: '#00bfff'}}>💰 10x Cheaper</h4>
-              <p>Other services charge £0.08-£0.15 per image</p>
-            </div>
-            <div>
-              <h4 style={{color: '#00bfff'}}>🎨 Same Quality</h4>
-              <p>Professional AI models, budget price</p>
-            </div>
           </div>
         </div>
       </section>
