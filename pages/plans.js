@@ -30,10 +30,9 @@ export default function Plans() {
           <div className="plan">
             <h3>Starter</h3>
             <p>100 image credits</p>
-            <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>50p</p>
-            <p>£0.005 per image</p>
+            <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>99p</p>
             <p>Perfect for trying out</p>
-            <button onClick={() => alert('100 credits for 50p - Redirecting to payment...')}>Buy Now</button>
+            <button onClick={() => alert('100 credits for 99p - Redirecting to payment...')}>Buy Now</button>
           </div>
           
           <div className="plan" style={{border: '2px solid #00bfff', transform: 'scale(1.05)'}}>
@@ -42,19 +41,17 @@ export default function Plans() {
               <p>Best Value</p>
             </div>
             <p>500 image credits</p>
-            <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£1.75</p>
-            <p>£0.0035 per image</p>
+            <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£3.99</p>
             <p>Most popular choice</p>
-            <button onClick={() => alert('500 credits for £1.75 - Redirecting to payment...')}>Buy Now</button>
+            <button onClick={() => alert('500 credits for £3.99 - Redirecting to payment...')}>Buy Now</button>
           </div>
           
           <div className="plan">
             <h3>Power User</h3>
             <p>1,000 image credits</p>
-            <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£3</p>
-            <p>£0.003 per image</p>
+            <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£6.99</p>
             <p>Best price per image</p>
-            <button onClick={() => alert('1,000 credits for £3 - Redirecting to payment...')}>Buy Now</button>
+            <button onClick={() => alert('1,000 credits for £6.99 - Redirecting to payment...')}>Buy Now</button>
           </div>
         </div>
       </section>
