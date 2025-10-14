@@ -9,8 +9,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Starting AI generation for prompt:', prompt);
-    
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -30,12 +28,10 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Replicate API error:', errorData);
       throw new Error(errorData.detail || 'API request failed');
     }
 
     const prediction = await response.json();
-    console.log('Prediction started:', prediction.id);
     
     let result;
     let attempts = 0;
@@ -49,10 +45,8 @@ export default async function handler(req, res) {
       });
       
       result = await statusResponse.json();
-      console.log('Polling attempt', attempts, 'Status:', result.status);
       
       if (result.status === 'succeeded') {
-        console.log('Generation succeeded:', result.output[0]);
         return res.json({ imageUrl: result.output[0] });
       } else if (result.status === 'failed') {
         throw new Error('AI generation failed');
@@ -65,7 +59,6 @@ export default async function handler(req, res) {
     throw new Error('Generation timeout');
 
   } catch (error) {
-    console.error('Generation error:', error);
     res.status(500).json({ 
       error: error.message || 'Image generation failed'
     });
