@@ -1,44 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact - NavAI</title>
-    <link rel="stylesheet" href="style.css?v=2">
-</head>
-<body>
-<header class="navbar">
-    <a href="index.html" class="logo">NavAI</a>
-    <nav>
-        <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="about.html">About</a></li>
-            <li><a href="plans.html">Plans</a></li>
-            <li><a href="contact.html" class="active">Contact</a></li>
-        </ul>
-    </nav>
-</header>
+import Head from 'next/head'
 
-<section class="contact">
-    <h2>Contact Us</h2>
-    <form class="contact-form">
-        <label for="name">Name</label>
-        <input type="text" placeholder="Your Name" id="name" required>
+export default function Contact() {
+  return (
+    <>
+      <Head>
+        <title>Contact - NavAI</title>
+        <link rel="stylesheet" href="/style.css" />
+      </Head>
 
-        <label for="email">Email</label>
-        <input type="email" placeholder="Your Email" id="email" required>
+      <header className="navbar">
+        <a href="/" className="logo">NavAI</a>
+        <nav>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/plans">Plans</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/contact" className="active">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
 
-        <label for="message">Message</label>
-        <textarea placeholder="Your Message" id="message" rows="6" required></textarea>
+      <section className="contact">
+        <h2>Contact Us</h2>
+        <form className="contact-form">
+          <label htmlFor="name">Name</label>
+          <input type="text" placeholder="Your Name" id="name" required />
 
-        <button type="submit">Send Message</button>
-    </form>
-</section>
+          <label htmlFor="email">Email</label>
+          <input type="email" placeholder="Your Email" id="email" required />
 
-<footer class="footer">
-    <p>&copy; 2025 NavAI. All rights reserved.</p>
-</footer>
+          <label htmlFor="message">Message</label>
+          <textarea placeholder="Your Message" id="message" rows="6" required></textarea>
 
-<script src="script.js?v=2"></script>
-</body>
-</html>
+          <button type="submit">Send Message</button>
+        </form>
+      </section>
+
+      <footer className="footer">
+        <p>&copy; 2025 NavAI. All rights reserved.</p>
+      </footer>
+
+      <script src="/script.js" />
+    </>
+  )
+}

@@ -1,50 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generate - NavAI</title>
-    <link rel="stylesheet" href="style.css?v=2">
-</head>
-<body>
-<header class="navbar">
-    <a href="index.html" class="logo">NavAI</a>
-    <nav>
-        <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="about.html">About</a></li>
-            <li><a href="plans.html">Plans</a></li>
-            <li><a href="contact.html">Contact</a></li>
-        </ul>
-    </nav>
-</header>
-<section class="generate">
-    <h2>Generate Your Image</h2>
-    <p class="generate-desc" style="color: #cdd9f0; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto;">
-        Describe your vision in detail and watch NavAI bring it to life with stunning AI-generated imagery.
-    </p>
-    
-    <div class="generate-container">
-        <div class="prompt-area">
-            <textarea 
-                id="prompt-box" 
-                placeholder="Describe what you want to generate... 
-Example: A majestic dragon flying over a medieval castle at sunset, fantasy art style, highly detailed, cinematic lighting"
-            ></textarea>
-            <button class="cta" style="margin-top: 20px; width: 100%;">Generate Image</button>
-        </div>
+import Head from 'next/head'
+
+export default function Generate() {
+  return (
+    <>
+      <Head>
+        <title>Generate - NavAI</title>
+        <link rel="stylesheet" href="/style.css" />
+      </Head>
+
+      <header className="navbar">
+        <a href="/" className="logo">NavAI</a>
+        <nav>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/plans">Plans</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/contact">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      <section className="generate">
+        <h2>Generate Your Image</h2>
+        <p className="generate-desc">Type your prompt below and let NavAI bring your ideas to life!</p>
         
-        <div class="output-area">
-            <p class="placeholder-text">Your generated image will appear here</p>
-            <img id="output-image" alt="Generated image">
+        <div className="generate-container">
+          <div className="prompt-area">
+            <textarea 
+              id="prompt-box" 
+              placeholder="Describe what you want to generate..."
+            ></textarea>
+            <button className="cta">Generate</button>
+          </div>
+          
+          <div className="output-area">
+            <p className="placeholder-text">Your generated image will appear here</p>
+            <img id="output-image" alt="Generated image" />
+          </div>
         </div>
-    </div>
-</section>
+      </section>
 
-<footer class="footer">
-    <p>&copy; 2025 NavAI. All rights reserved.</p>
-</footer>
+      <footer className="footer">
+        <p>&copy; 2025 NavAI. All rights reserved.</p>
+      </footer>
 
-<script src="script.js?v=2"></script>
-</body>
-</html>
+      <script src="/script.js" />
+    </>
+  )
+}
