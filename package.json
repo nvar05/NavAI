@@ -2,11 +2,16 @@
   "name": "navai",
   "version": "1.0.0",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
-  "dependencies": {},
+  "dependencies": {
+    "next": "^13.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
   "engines": {
-    "node": "22.x"
+    "node": "18.x"
   }
 }

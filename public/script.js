@@ -81,14 +81,31 @@
             }
 
             setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 2000));
 
-            const placeholderUrl = `https://picsum.photos/seed/${encodeURIComponent(prompt)}/1024/640`;
-            
-            if (outputImage) {
-                outputImage.src = placeholderUrl;
-                outputImage.alt = `Generated: ${prompt}`;
-                outputImage.style.display = 'block';
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Generation failed');
+                }
+
+                // Show the REAL AI-generated image
+                if (outputImage) {
+                    outputImage.src = data.imageUrl;
+                    outputImage.alt = `Generated: ${prompt}`;
+                    outputImage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
             }
 
             setLoading(false);
@@ -126,7 +143,7 @@
                     // Navigate immediately with no delay
                     setTimeout(() => {
                         window.location.href = href;
-                    }, 50); // Almost instant - just for visual feedback
+                    }, 50);
                 }
             });
         });
