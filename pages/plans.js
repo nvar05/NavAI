@@ -4,7 +4,7 @@ export default function Plans() {
   return (
     <>
       <Head>
-        <title>Buy Credits - NavAI</title>
+        <title>Plans - NavAI</title>
         <link rel="stylesheet" href="/style.css" />
       </Head>
 
@@ -21,37 +21,75 @@ export default function Plans() {
       </header>
 
       <section className="plans">
-        <h2>Buy Image Credits</h2>
+        <h2>Choose Your Plan</h2>
         <p style={{color: '#cdd9f0', marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px', lineHeight: '1.6'}}>
-          Start with 10 free credits. Buy more whenever you need them. Credits never expire! 🎨
+          Start with 10 free credits. Choose one-time packs or monthly subscriptions. Cancel anytime!
         </p>
         
-        <div className="plan-cards">
-          <div className="plan">
-            <h3>Starter</h3>
-            <p>100 image credits</p>
-            <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>99p</p>
-            <p>Perfect for trying out</p>
-            <button onClick={() => alert('100 credits for 99p - Redirecting to payment...')}>Buy Now</button>
-          </div>
-          
-          <div className="plan" style={{border: '2px solid #00bfff', transform: 'scale(1.05)'}}>
-            <div style={{background: 'linear-gradient(90deg, #00bfff, #0077ff)', color: 'white', padding: '10px', margin: '-30px -30px 20px -30px', borderRadius: '15px 15px 0 0'}}>
-              <h3>Popular</h3>
-              <p>Best Value</p>
+        <div style={{marginBottom: '50px'}}>
+          <h3 style={{color: '#00bfff', marginBottom: '30px'}}>💰 One-Time Credit Packs</h3>
+          <div className="plan-cards">
+            <div className="plan">
+              <h3>Starter Pack</h3>
+              <p>100 image credits</p>
+              <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>99p</p>
+              <p>Never expires</p>
+              <p>Perfect for trying out</p>
+              <button onClick={() => alert('100 credits for 99p - Redirecting to payment...')}>Buy Now</button>
             </div>
-            <p>500 image credits</p>
-            <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£3.99</p>
-            <p>Most popular choice</p>
-            <button onClick={() => alert('500 credits for £3.99 - Redirecting to payment...')}>Buy Now</button>
           </div>
-          
-          <div className="plan">
-            <h3>Power User</h3>
-            <p>1,000 image credits</p>
-            <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£6.99</p>
-            <p>Best price per image</p>
-            <button onClick={() => alert('1,000 credits for £6.99 - Redirecting to payment...')}>Buy Now</button>
+        </div>
+
+        <div>
+          <h3 style={{color: '#00bfff', marginBottom: '30px'}}>🔄 Monthly Subscriptions</h3>
+          <div className="plan-cards">
+            <div className="plan">
+              <h3>Basic</h3>
+              <p>300 images/month</p>
+              <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£4/month</p>
+              <p>£0.013 per image</p>
+              <p>Great for casual use</p>
+              <button onClick={() => alert('Basic plan - £4/month - Redirecting...')}>Subscribe</button>
+            </div>
+            
+            <div className="plan" style={{border: '2px solid #00bfff', transform: 'scale(1.05)'}}>
+              <div style={{background: 'linear-gradient(90deg, #00bfff, #0077ff)', color: 'white', padding: '10px', margin: '-30px -30px 20px -30px', borderRadius: '15px 15px 0 0'}}>
+                <h3>Pro</h3>
+                <p>Most Popular</p>
+              </div>
+              <p>800 images/month</p>
+              <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£8/month</p>
+              <p>£0.01 per image</p>
+              <p style={{color: '#00ff88', fontWeight: 'bold'}}>23% cheaper</p>
+              <button onClick={() => alert('Pro plan - £8/month - Redirecting...')}>Subscribe</button>
+            </div>
+            
+            <div className="plan">
+              <h3>Unlimited</h3>
+              <p>2,000 images/month</p>
+              <p style={{fontSize: '1.5rem', color: '#00bfff', fontWeight: 'bold', margin: '15px 0'}}>£15/month</p>
+              <p>£0.0075 per image</p>
+              <p style={{color: '#00ff88', fontWeight: 'bold'}}>42% cheaper</p>
+              <button onClick={() => alert('Unlimited plan - £15/month - Redirecting...')}>Subscribe</button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{marginTop: '50px', background: 'rgba(0,191,255,0.1)', padding: '30px', borderRadius: '15px', maxWidth: '800px', margin: '50px auto 0'}}>
+          <h3 style={{color: '#00bfff', marginBottom: '20px'}}>💡 Which Plan is Right For You?</h3>
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', textAlign: 'left'}}>
+            <div>
+              <h4 style={{color: '#00bfff'}}>🎨 Casual User?</h4>
+              <p><strong>99p Starter Pack</strong> - Perfect if you just need a few images occasionally</p>
+            </div>
+            <div>
+              <h4 style={{color: '#00bfff'}}>🚀 Regular Creator?</h4>
+              <p><strong>£8/month Pro</strong> - Best value for consistent image generation</p>
+            </div>
+            <div>
+              <h4 style={{color: '#00bfff'}}>🏆 Power User?</h4>
+              <p><strong>£15/month Unlimited</strong> - Lowest cost per image for heavy usage</p>
+            </div>
           </div>
         </div>
       </section>
