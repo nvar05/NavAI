@@ -19,9 +19,9 @@
     function initPageLoad() {
         document.body.style.opacity = '1';
         
-        // Only show credits on specific pages
+        // Only show credits on the generate page
         const currentPage = window.location.pathname;
-        const showCreditsOn = ['/generate', '/plans', '/'];
+        const showCreditsOn = ['/generate'];
         
         if (showCreditsOn.some(page => currentPage === page || currentPage === page + '.html')) {
             updateCreditDisplay();
