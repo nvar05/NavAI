@@ -1,3 +1,6 @@
+// Simple in-memory store (for demo - would use database in production)
+const usedIPs = new Set();
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -9,6 +12,21 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Get client IP
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = forwarded ? forwarded.split(',')[0] : req.socket.remoteAddress;
+    
+    console.log('Request from IP:', ip);
+
+    // Check if IP has used free credits (basic anti-abuse)
+    const ipKey = `ip_${ip}`;
+    const hasUsedFreeCredits = usedIPs.has(ipKey);
+    
+    if (!hasUsedFreeCredits) {
+      console.log('First time user - granting free credits');
+      usedIPs.add(ipKey);
+    }
+
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -47,7 +65,10 @@ export default async function handler(req, res) {
       result = await statusResponse.json();
       
       if (result.status === 'succeeded') {
-        return res.json({ imageUrl: result.output[0] });
+        return res.json({ 
+          imageUrl: result.output[0],
+          freeCreditsUsed: !hasUsedFreeCredits 
+        });
       } else if (result.status === 'failed') {
         throw new Error('AI generation failed');
       }
@@ -59,8 +80,9 @@ export default async function handler(req, res) {
     throw new Error('Generation timeout');
 
   } catch (error) {
+    console.error('Generation error:', error);
     res.status(500).json({ 
-      error: error.message || 'Image generation failed'
+      error: error.message || 'AI generation failed'
     });
   }
 }

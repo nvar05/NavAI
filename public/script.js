@@ -7,7 +7,13 @@
     const qsa = (selector) => Array.from(document.querySelectorAll(selector));
 
     // User credits system
-    let userCredits = localStorage.getItem('navai_credits') || 10; // Start with 10 free credits
+    let userCredits = localStorage.getItem('navai_credits');
+    if (userCredits === null) {
+        userCredits = 10; // Start with 10 free credits
+        localStorage.setItem('navai_credits', userCredits);
+    } else {
+        userCredits = parseInt(userCredits);
+    }
 
     // Super fast page load
     function initPageLoad() {
@@ -24,8 +30,8 @@
             creditDisplay.style.cssText = 'position: fixed; top: 90px; right: 20px; background: rgba(0,191,255,0.2); padding: 10px 15px; border-radius: 20px; color: #00bfff; font-weight: 600; border: 1px solid rgba(0,191,255,0.3); z-index: 1000; font-size: 14px;';
             document.body.appendChild(creditDisplay);
         }
-        creditDisplay.textContent = `�� ${userCredits} credits`;
-        creditDisplay.title = 'Images remaining this month';
+        creditDisplay.textContent = `🎨 ${userCredits} credits`;
+        creditDisplay.title = 'Images remaining';
     }
 
     // FAQ Accordion
