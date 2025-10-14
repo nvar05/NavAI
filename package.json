@@ -1,12 +1,12 @@
 {
   "name": "navai",
-  "version": "1.0.0", 
+  "version": "1.0.0",
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js"
   },
   "dependencies": {},
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   }
 }
