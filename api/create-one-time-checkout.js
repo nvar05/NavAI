@@ -14,15 +14,16 @@ module.exports = async (req, res) => {
 
     const domain = process.env.YOUR_DOMAIN || 'https://nav-ai.co.uk';
     
+    // TEMPORARY: Use the Basic plan price ID so it at least works
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price: 'price_1SIzNkLGtnLpxero8Ws7aqYV',
+          price: 'price_1SIzMALGtnLpxero9ODFsPzy', // Basic plan price
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode: 'subscription',
       success_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${domain}/plans.html`,
     });
