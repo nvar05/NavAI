@@ -18,11 +18,11 @@ module.exports = async (req, res) => {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: 'price_1SIzNkLGtnLpxero8Ws7aqYV',
+          price: 'price_1SIzNkLGtnLpxero8Ws7aqYV', // 99p price ID
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode: 'payment', // This should be 'payment' for one-time, not 'subscription'
       success_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${domain}/plans.html`,
     });
