@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plans - NavAI</title>
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+<header class="navbar">
+    <a href="index.html" class="logo">NavAI</a>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="plans.html" class="active">Plans</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </nav>
+</header>
+
+<section class="plans">
+    <h2>Our Plans</h2>
+    <div class="plan-cards">
+        <div class="plan" data-plan="basic">
+            <h3>Basic</h3>
+            <p>300 images/month</p>
+            <p><strong>£2/month</strong></p>
+            <button>Subscribe</button>
+        </div>
+        <div class="plan" data-plan="pro">
+            <h3>Pro</h3>
+            <p>800 images/month</p>
+            <p><strong>£5/month</strong></p>
+            <button>Subscribe</button>
+        </div>
+        <div class="plan" data-plan="unlimited">
+            <h3>Unlimited</h3>
+            <p>2000 images/month</p>
+            <p><strong>£10/month</strong></p>
+            <button>Subscribe</button>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px;">
+        <h3>One-Time Purchase</h3>
+        <p>100 credits for just <strong>99p</strong></p>
+        <button onclick="buyOneTimeCredits()" class="cta">Buy 100 Credits - 99p</button>
+    </div>
+</section>
+
+<footer class="footer">
+    <p>&copy; 2025 NavAI. All rights reserved.</p>
+</footer>
+
+<script>
+function buyOneTimeCredits() {
+    alert('One-time purchase coming soon! For now, please choose a subscription plan.');
+}
+</script>
+<script src="script.js?v=2"></script>
+</body>
+</html>
