@@ -6,30 +6,15 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { plan } = JSON.parse(req.body);
-    
-    // Use your actual Price IDs
-    const prices = {
-      basic: 'price_1SIzMALGtnLpxero9ODFsPzy',      // Basic plan
-      pro: 'price_1SIzMkLGtnLpxerooYEqLTAe',        // Pro plan
-      unlimited: 'price_1SIzNALGtnLpxero7EDYtT39'   // Unlimited plan
-    };
-
-    const priceId = prices[plan];
-    
-    if (!priceId) {
-      return res.status(400).json({ error: 'Invalid plan' });
-    }
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
+          price: 'price_1SIzNkLGtnLpxero8Ws7aqYV', // 99p price ID
           quantity: 1,
         },
       ],
-      mode: 'subscription',
+      mode: 'payment',
       success_url: `${process.env.YOUR_DOMAIN}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.YOUR_DOMAIN}/plans.html`,
     });
