@@ -1,5 +1,3 @@
-const fetch = (...args) => require('node-fetch')(...args);
-
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -18,6 +16,9 @@ module.exports = async (req, res) => {
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
+
+    // Use dynamic import for node-fetch
+    const fetch = (await import('node-fetch')).default;
 
     const modelVersion = "stability-ai/sdxl:7762fd07cf82c948538e41f63a2dbacc420d6aaa4f7e5ccee83e649e9c17ae4e";
     
