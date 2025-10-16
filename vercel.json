@@ -20,6 +20,10 @@
     {
       "src": "api/create-checkout.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/create-one-time-checkout.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -28,8 +32,12 @@
       "dest": "/api/generate.js"
     },
     {
-      "src": "/api/create-checkout",
+      "src": "/api/create-checkout", 
       "dest": "/api/create-checkout.js"
+    },
+    {
+      "src": "/api/create-one-time-checkout",
+      "dest": "/api/create-one-time-checkout.js"
     },
     {
       "src": "/(.*)",
