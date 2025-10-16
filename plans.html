@@ -44,54 +44,6 @@
 </head>
 <body>
 <header class="navbar">
-
-cat > plans.html << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plans - NavAI</title>
-    <link rel="stylesheet" href="style.css?v=2">
-    <style>
-    /* GUARANTEED BUTTON FIX */
-    .plan-button, .offer-button {
-        position: relative !important;
-        z-index: 100 !important;
-        cursor: pointer !important;
-    }
-    
-    /* FIX: Make sure plan cards don't block clicks */
-    .plan-cards {
-        display: flex;
-        justify-content: center;
-        gap: 30px;
-        flex-wrap: wrap;
-        position: relative;
-    }
-    
-    .plan {
-        position: relative;
-    }
-    
-    /* NUCLEAR OPTION: Remove any potential blockers */
-    body * {
-        pointer-events: auto !important;
-    }
-    
-    /* But restore pointer-events for text elements */
-    p, h1, h2, h3, h4, h5, h6, span, div:not(.plan):not(.plan-cards) {
-        pointer-events: none !important;
-    }
-    
-    /* Force buttons to be clickable */
-    button, .plan-button, .offer-button {
-        pointer-events: auto !important;
-    }
-    </style>
-</head>
-<body>
-<header class="navbar">
     <a href="index.html" class="logo">NavAI</a>
     <nav>
         <ul>
@@ -160,72 +112,49 @@ cat > plans.html << 'EOF'
 </footer>
 
 <script>
-// REAL STRIPE HANDLERS - UPDATED VERSION
+// SIMPLE CLICK HANDLERS - NO DOUBLE ALERTS
 let clickLock = false;
 
-async function handlePlanClick(plan) {
+function handlePlanClick(plan) {
     if (clickLock) return;
     clickLock = true;
     
-    console.log('Processing plan:', plan);
-    
-    try {
-        const response = await fetch('/api/create-checkout', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ plan: plan })
-        });
-        
-        const data = await response.json();
-        console.log('Stripe response:', data);
-        
-        if (data.url) {
-            // Redirect to REAL Stripe checkout
-            window.location.href = data.url;
-        } else {
-            alert('Error: ' + (data.error || 'Please try again'));
-        }
-    } catch (error) {
-        console.error('Payment error:', error);
-        alert('Payment system error. Please try again.');
-    }
+    alert('Plan clicked: ' + plan + ' - Stripe integration coming soon!');
     
     setTimeout(() => {
         clickLock = false;
-    }, 2000);
+    }, 100);
 }
 
-async function handleOneTimeClick() {
+function handleOneTimeClick() {
     if (clickLock) return;
     clickLock = true;
     
-    console.log('Processing one-time payment');
-    
-    try {
-        const response = await fetch('/api/create-one-time-checkout', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({})
-        });
-        
-        const data = await response.json();
-        console.log('One-time response:', data);
-        
-        if (data.url) {
-            // Redirect to REAL Stripe checkout
-            window.location.href = data.url;
-        } else {
-            alert('Error: ' + (data.error || 'Please try again'));
-        }
-    } catch (error) {
-        console.error('Payment error:', error);
-        alert('Payment system error. Please try again.');
-    }
+    alert('One-time purchase coming soon!');
     
     setTimeout(() => {
         clickLock = false;
-    }, 2000);
+    }, 100);
 }
+
+// EMERGENCY FIX: If buttons still not working, add this
+setTimeout(() => {
+    const buttons = document.querySelectorAll('.plan-button, .offer-button');
+    buttons.forEach(btn => {
+        // Remove any existing listeners
+        btn.replaceWith(btn.cloneNode(true));
+    });
+    
+    // Re-attach listeners to new buttons
+    document.querySelectorAll('.plan-button').forEach(btn => {
+        btn.onclick = function() {
+            const plan = this.closest('.plan').getAttribute('data-plan');
+            handlePlanClick(plan);
+        };
+    });
+    
+    document.querySelector('.offer-button').onclick = handleOneTimeClick;
+}, 500);
 </script>
 </body>
 </html>
