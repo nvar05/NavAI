@@ -83,3 +83,20 @@ function buyOneTimeCredits() {
 <script src="script.js?v=2"></script>
 </body>
 </html>
+
+<script>
+// Simple test - remove this after testing
+console.log('Plans page loaded');
+document.addEventListener('click', function(e) {
+    console.log('Click detected on:', e.target);
+});
+
+// Test if buttons exist and are clickable
+setTimeout(() => {
+    const buttons = document.querySelectorAll('.plan-button, .one-time-button');
+    console.log('Buttons found:', buttons.length);
+    buttons.forEach(btn => {
+        console.log('Button:', btn, 'Clickable:', btn.style.pointerEvents);
+    });
+}, 1000);
+</script>
