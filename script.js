@@ -9,26 +9,21 @@
     // User credits system
     let userCredits = localStorage.getItem('navai_credits');
     if (userCredits === null) {
-        userCredits = 10; // Start with 10 free credits
+        userCredits = 10;
         localStorage.setItem('navai_credits', userCredits);
     } else {
         userCredits = parseInt(userCredits);
     }
 
-    // Super fast page load
     function initPageLoad() {
         document.body.style.opacity = '1';
-        
-        // Only show credits on the generate page
         const currentPage = window.location.pathname;
         const showCreditsOn = ['/generate'];
-        
         if (showCreditsOn.some(page => currentPage === page || currentPage === page + '.html')) {
             updateCreditDisplay();
         }
     }
 
-    // Update credit display
     function updateCreditDisplay() {
         let creditDisplay = document.querySelector('.credit-display');
         if (!creditDisplay) {
@@ -38,21 +33,15 @@
             document.body.appendChild(creditDisplay);
         }
         creditDisplay.textContent = `🎨 ${userCredits} credits`;
-        creditDisplay.title = 'Images remaining';
     }
 
-    // FAQ Accordion
     function initFAQ() {
         const faqItems = qsa('.faq-item');
-        
         faqItems.forEach(item => {
             const question = item.querySelector('.faq-question') || item.querySelector('h3');
             const answer = item.querySelector('.faq-answer') || item.querySelector('p');
-            
             if (!question || !answer) return;
-
             question.style.cursor = 'pointer';
-            
             question.addEventListener('click', () => {
                 faqItems.forEach(otherItem => {
                     if (otherItem !== item && otherItem.classList.contains('active')) {
@@ -64,11 +53,9 @@
         });
     }
 
-    // Generate functionality
     function initGenerate() {
         const generateBtn = qs('#generateBtn') || qs('.generate .cta') || qs('.cta');
         const promptBox = qs('#prompt-box') || qs('textarea');
-        
         if (!generateBtn || !promptBox) return;
 
         let outputArea = qs('.output-area');
@@ -77,10 +64,7 @@
             if (generateSection) {
                 outputArea = document.createElement('div');
                 outputArea.className = 'output-area';
-                outputArea.innerHTML = `
-                    <p class="placeholder-text">Your generated image will appear here</p>
-                    <img id="output-image" style="display:none; max-width:100%; border-radius:12px; margin-top:20px;" alt="Generated image">
-                `;
+                outputArea.innerHTML = '<p class="placeholder-text">Your generated image will appear here</p><img id="output-image" style="display:none; max-width:100%; border-radius:12px; margin-top:20px;" alt="Generated image">';
                 generateSection.appendChild(outputArea);
             }
         }
@@ -102,45 +86,29 @@
 
         generateBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            
-            // Check credits
             if (userCredits <= 0) {
-                alert('🎨 Out of credits! Upgrade your plan to generate more amazing images.');
+                alert('�� Out of credits! Upgrade your plan to generate more amazing images.');
                 window.location.href = '/plans';
                 return;
             }
-            
             const prompt = promptBox.value.trim();
-            
             if (!prompt) {
                 alert('Please enter a prompt to generate an image.');
                 promptBox.focus();
                 return;
             }
-
             setLoading(true);
-
             try {
                 const response = await fetch('/api/generate', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ prompt })
                 });
-
                 const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Generation failed');
-                }
-
-                // Deduct credit and update UI
+                if (!response.ok) throw new Error(data.error || 'Generation failed');
                 userCredits--;
                 localStorage.setItem('navai_credits', userCredits);
                 updateCreditDisplay();
-                
-                // Show the REAL AI-generated image
                 if (outputImage) {
                     outputImage.src = data.imageUrl;
                     outputImage.alt = `Generated: ${prompt}`;
@@ -150,16 +118,13 @@
                 console.error('Error:', error);
                 alert('Error: ' + error.message);
             }
-
             setLoading(false);
         });
     }
 
-    // Contact form handler
     function initContactForm() {
         const contactForm = qs('.contact-form');
         if (!contactForm) return;
-
         contactForm.addEventListener('submit', (e) => {
             e.preventDefault();
             alert('Thank you for your message! We\'ll get back to you soon.');
@@ -167,76 +132,45 @@
         });
     }
 
-    // Stripe Checkout for Plans
     function initStripeCheckout() {
-        const planButtons = document.querySelectorAll('.plan-button');
-        console.log('Stripe: Found buttons:', planButtons.length);
-        
-        planButtons.forEach(button => {
-            button.addEventListener('click', async (e) => {
-                console.log('Stripe: Button clicked');
+        const buttons = document.querySelectorAll('.plan-button');
+        console.log('Found buttons:', buttons.length);
+        buttons.forEach(btn => {
+            btn.onclick = function(e) {
                 e.preventDefault();
-                
-                const planElement = button.closest('.plan');
-                const planType = planElement.getAttribute('data-plan');
-                console.log('Stripe: Plan type:', planType);
-                
-                try {
-                    const response = await fetch('/api/create-checkout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            plan: planType
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.error || 'Payment failed');
-                    }
-
-                    if (data.url) {
-                        window.location.href = data.url;
-                    } else {
-                        throw new Error('No checkout URL received');
-                    }
-                } catch (err) {
-                    console.error('Payment error:', err);
-                    alert('Payment error: ' + err.message);
-                }
-            });
+                e.stopPropagation();
+                console.log('BUTTON CLICKED!');
+                const plan = this.closest('.plan').getAttribute('data-plan');
+                alert('Button works! Plan: ' + plan);
+                fetch('/api/create-checkout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ plan: plan })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.url) window.location.href = data.url;
+                    else alert('No URL: ' + JSON.stringify(data));
+                })
+                .catch(err => alert('Error: ' + err.message));
+            };
         });
     }
 
-    // Fast navigation with quick visual feedback
     function initSmoothNavigation() {
         const navLinks = qsa('.navbar a[href]');
-        
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 const href = link.getAttribute('href');
-                
-                // Only handle internal navigation
                 if (href && !href.startsWith('http') && !href.startsWith('#')) {
                     e.preventDefault();
-                    
-                    // Quick visual feedback
                     document.body.style.opacity = '0.9';
-                    document.body.style.transition = 'opacity 0.1s ease';
-                    
-                    // Navigate immediately with no delay
-                    setTimeout(() => {
-                        window.location.href = href;
-                    }, 50);
+                    setTimeout(() => window.location.href = href, 50);
                 }
             });
         });
     }
 
-    // Initialize everything
     document.addEventListener('DOMContentLoaded', () => {
         initPageLoad();
         initSmoothNavigation();
@@ -244,8 +178,6 @@
         initGenerate();
         initContactForm();
         if (document.querySelector('.plan-cards')) initStripeCheckout();
-        
-        console.log('NavAI initialized with credit system 🚀');
+        console.log('NavAI initialized 🚀');
     });
-
 })();
