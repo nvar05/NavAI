@@ -1,19 +1,17 @@
-const Stripe = require('stripe');
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
-      const { plan, amount, credits } = req.body;
-
+      const { plan } = req.body;
+      
       const planDetails = {
-        basic: { name: 'Basic Plan - 300 Image Credits', description: '300 images per month' },
-        pro: { name: 'Pro Plan - 800 Image Credits', description: '800 images per month' },
-        unlimited: { name: 'Unlimited Plan - 2000 Image Credits', description: '2000 images per month' }
+        basic: { amount: 200, name: 'Basic Plan - 300 Credits' },
+        pro: { amount: 500, name: 'Pro Plan - 800 Credits' },
+        unlimited: { amount: 1000, name: 'Unlimited Plan - 2000 Credits' }
       };
-
-      const selectedPlan = planDetails[plan] || { name: 'NavAI Image Credits', description: 'AI Image Generation Credits' };
+      
+      const selectedPlan = planDetails[plan] || { amount: 200, name: 'Basic Plan' };
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -22,9 +20,8 @@ export default async function handler(req, res) {
             currency: 'gbp',
             product_data: {
               name: selectedPlan.name,
-              description: selectedPlan.description,
             },
-            unit_amount: amount,
+            unit_amount: selectedPlan.amount,
           },
           quantity: 1,
         }],
@@ -39,7 +36,6 @@ export default async function handler(req, res) {
       res.status(500).json({ error: err.message });
     }
   } else {
-    res.setHeader('Allow', 'POST');
-    res.status(405).end('Method Not Allowed');
+    res.status(405).json({ error: 'Method not allowed' });
   }
 }
