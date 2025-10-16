@@ -6,33 +6,55 @@
     <title>Plans - NavAI</title>
     <link rel="stylesheet" href="style.css?v=2">
     <style>
-    /* FIX: Keep buttons clickable but restore layout */
+    /* BULLETPROOF BUTTON FIX */
     .plan-button, .offer-button {
         position: relative !important;
-        z-index: 9999 !important;
+        z-index: 10000 !important;
         pointer-events: auto !important;
+        cursor: pointer !important;
     }
     
-    /* Ensure plans display side by side */
+    /* FIX PLAN CARDS LAYOUT */
     .plan-cards {
         display: flex !important;
         justify-content: center !important;
-        gap: 40px !important;
+        align-items: flex-start !important;
+        gap: 30px !important;
         flex-wrap: wrap !important;
+        position: relative !important;
+        z-index: 1 !important;
     }
     
     .plan {
-        width: 280px !important;
-        display: block !important;
         position: relative !important;
+        z-index: 2 !important;
+        width: 280px !important;
+        min-height: 400px !important;
     }
     
-    /* Remove any overlays that might block clicks */
-    .plan-cards::before,
-    .plan-cards::after,
-    .plan::before,
-    .plan::after {
+    /* FIX FULLSCREEN ISSUES */
+    body, html {
+        overflow-x: hidden !important;
+        width: 100% !important;
+    }
+    
+    .plans {
+        position: relative !important;
+        z-index: 1 !important;
+        min-height: 100vh !important;
+        padding: 120px 20px 100px !important;
+    }
+    
+    /* REMOVE ANY POTENTIAL OVERLAYS */
+    .plan::before, .plan::after,
+    .plan-cards::before, .plan-cards::after {
         display: none !important;
+    }
+    
+    /* FORCE BUTTONS TO STAY CLICKABLE */
+    button.plan-button, button.offer-button {
+        transform: none !important;
+        transition: none !important;
     }
     </style>
 </head>
@@ -115,6 +137,25 @@ function handleOneTimeClick() {
     alert('One-time purchase coming soon!');
     console.log('One-time purchase clicked');
 }
+
+// EXTRA SAFETY: Add event listeners as backup
+document.addEventListener('DOMContentLoaded', function() {
+    // Backup click handlers
+    document.querySelectorAll('.plan-button').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            if (!e.defaultPrevented) {
+                const plan = this.closest('.plan').getAttribute('data-plan');
+                handlePlanClick(plan);
+            }
+        });
+    });
+    
+    document.querySelector('.offer-button').addEventListener('click', function(e) {
+        if (!e.defaultPrevented) {
+            handleOneTimeClick();
+        }
+    });
+});
 </script>
 </body>
 </html>
