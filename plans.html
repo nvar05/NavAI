@@ -112,49 +112,64 @@
 </footer>
 
 <script>
-// SIMPLE CLICK HANDLERS - NO DOUBLE ALERTS
+// REAL STRIPE PAYMENTS - SIMPLE VERSION
 let clickLock = false;
 
-function handlePlanClick(plan) {
+async function handlePlanClick(plan) {
     if (clickLock) return;
     clickLock = true;
     
-    alert('Plan clicked: ' + plan + ' - Stripe integration coming soon!');
+    try {
+        const response = await fetch('/api/create-checkout', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ plan: plan })
+        });
+        
+        const data = await response.json();
+        
+        if (data.url) {
+            // Redirect to REAL Stripe checkout
+            window.location.href = data.url;
+        } else {
+            alert('Error: ' + (data.error || 'Please try again'));
+        }
+    } catch (error) {
+        alert('Payment system loading... Please try again in a moment.');
+    }
     
     setTimeout(() => {
         clickLock = false;
-    }, 100);
+    }, 2000);
 }
 
-function handleOneTimeClick() {
+async function handleOneTimeClick() {
     if (clickLock) return;
     clickLock = true;
     
-    alert('One-time purchase coming soon!');
+    try {
+        const response = await fetch('/api/create-one-time-checkout', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({})
+        });
+        
+        const data = await response.json();
+        
+        if (data.url) {
+            // Redirect to REAL Stripe checkout
+            window.location.href = data.url;
+        } else {
+            alert('Error: ' + (data.error || 'Please try again'));
+        }
+    } catch (error) {
+        alert('Payment system loading... Please try again in a moment.');
+    }
     
     setTimeout(() => {
         clickLock = false;
-    }, 100);
+    }, 2000);
 }
-
-// EMERGENCY FIX: If buttons still not working, add this
-setTimeout(() => {
-    const buttons = document.querySelectorAll('.plan-button, .offer-button');
-    buttons.forEach(btn => {
-        // Remove any existing listeners
-        btn.replaceWith(btn.cloneNode(true));
-    });
-    
-    // Re-attach listeners to new buttons
-    document.querySelectorAll('.plan-button').forEach(btn => {
-        btn.onclick = function() {
-            const plan = this.closest('.plan').getAttribute('data-plan');
-            handlePlanClick(plan);
-        };
-    });
-    
-    document.querySelector('.offer-button').onclick = handleOneTimeClick;
-}, 500);
 </script>
 </body>
 </html>
