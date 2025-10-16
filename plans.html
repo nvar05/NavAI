@@ -5,20 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plans - NavAI</title>
     <link rel="stylesheet" href="style.css?v=2">
-    <style>
-        /* FORCE buttons to be clickable */
-        .plan-button, .offer-button {
-            pointer-events: auto !important;
-            cursor: pointer !important;
-            position: relative !important;
-            z-index: 9999 !important;
-        }
-        
-        /* Remove any potential overlays */
-        body * {
-            pointer-events: auto !important;
-        }
-    </style>
 </head>
 <body>
 <header class="navbar">
@@ -90,54 +76,18 @@
 </footer>
 
 <script>
-// SIMPLE CLICK HANDLERS - This will definitely work
+// SIMPLE FUNCTIONS THAT WILL DEFINITELY WORK
 function handlePlanClick(plan) {
-    console.log('Plan button clicked:', plan);
-    alert('Redirecting to Stripe checkout for ' + plan + ' plan...');
-    
-    // Call Stripe API
-    fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ plan: plan })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.url) {
-            window.location.href = data.url;
-        } else {
-            alert('Error: ' + (data.error || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to create checkout session. Please try again.');
-    });
+    alert('Plan clicked: ' + plan + ' - Stripe integration coming soon!');
+    console.log('Plan selected:', plan);
 }
 
 function handleOneTimeClick() {
-    console.log('One-time button clicked');
-    alert('One-time purchase coming soon! For now, please choose a subscription plan.');
+    alert('One-time purchase coming soon!');
+    console.log('One-time purchase clicked');
 }
 
-// Make absolutely sure buttons are clickable
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Page loaded - buttons should be clickable');
-    
-    // Force all buttons to be clickable
-    const buttons = document.querySelectorAll('button');
-    buttons.forEach(button => {
-        button.style.pointerEvents = 'auto';
-        button.style.cursor = 'pointer';
-        button.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        };
-    });
-    
-    console.log('Buttons initialized:', buttons.length);
-});
+console.log('Plans page JavaScript loaded successfully!');
 </script>
 </body>
 </html>
