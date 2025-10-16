@@ -1,48 +1,70 @@
-const Replicate = require('replicate');
-
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
-
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const { prompt } = req.body;
+  if (!prompt) {
+    return res.status(400).json({ error: 'Prompt is required' });
+  }
+
   try {
-    const { prompt } = req.body;
-
-    if (!prompt) {
-      return res.status(400).json({ error: 'Prompt is required' });
-    }
-
-    console.log('Generating image for prompt:', prompt);
-
-    const output = await replicate.run(
-      "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-      {
-        input: {
+    // Try a different, proven model
+    const modelVersion = "stability-ai/sdxl:7762fd07cf82c948538e41f63a2dbacc420d6aaa4f7e5ccee83e649e9c17ae4e";
+    
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: modelVersion,
+        input: { 
           prompt: prompt,
           width: 1024,
-          height: 1024,
-          num_outputs: 1,
-          guidance_scale: 7.5,
-          num_inference_steps: 25
+          height: 1024
         }
-      }
-    );
-
-    console.log('Generation successful:', output);
-
-    res.status(200).json({ 
-      imageUrl: output[0],
-      success: true 
+      })
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || `API error: ${response.status}`);
+    }
+
+    const prediction = await response.json();
+    
+    let result;
+    let attempts = 0;
+    const maxAttempts = 60; // Give it more time
+    
+    while (attempts < maxAttempts) {
+      const statusResponse = await fetch(prediction.urls.get, {
+        headers: {
+          'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+        },
+      });
+      
+      result = await statusResponse.json();
+      
+      if (result.status === 'succeeded') {
+        return res.json({ imageUrl: result.output[0] });
+      } else if (result.status === 'failed') {
+        throw new Error('AI generation failed: ' + (result.error || 'Unknown error'));
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+      attempts++;
+    }
+    
+    throw new Error('Generation timeout');
 
   } catch (error) {
     console.error('Generation error:', error);
     res.status(500).json({ 
-      error: 'Failed to generate image: ' + error.message 
+      error: error.message || 'AI generation failed',
+      debug: 'Check Replicate dashboard for details'
     });
   }
 }

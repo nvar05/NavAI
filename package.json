@@ -1,6 +1,7 @@
 {
   "name": "nvar-imagegen",
   "version": "1.0.0",
+  "type": "module",
   "description": "NavAI Image Generation",
   "scripts": {
     "dev": "next dev",
@@ -8,10 +9,9 @@
     "start": "next start"
   },
   "dependencies": {
+    "stripe": "^14.0.0",
     "next": "^13.0.0",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "replicate": "^1.3.0",
-    "stripe": "^14.25.0"
+    "react-dom": "^18.0.0"
   }
 }
