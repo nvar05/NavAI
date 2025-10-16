@@ -1,4 +1,4 @@
-// NavAI - Fast & Smooth Navigation
+// NavAI - Fast & Smooth Navigation with Credit System
 (() => {
     if (window._navaiScriptInitialized) return;
     window._navaiScriptInitialized = true;
@@ -6,32 +6,112 @@
     const qs = (selector) => document.querySelector(selector);
     const qsa = (selector) => Array.from(document.querySelectorAll(selector));
 
-    // Generate functionality - SIMPLE VERSION
-    function initGenerate() {
-        const generateBtn = qs('#generateBtn');
-        const promptBox = qs('#prompt-box');
+    // User credits system
+    let userCredits = localStorage.getItem('navai_credits');
+    if (userCredits === null) {
+        userCredits = 10; // Start with 10 free credits
+        localStorage.setItem('navai_credits', userCredits);
+    } else {
+        userCredits = parseInt(userCredits);
+    }
 
+    // Super fast page load
+    function initPageLoad() {
+        document.body.style.opacity = '1';
+        
+        // Only show credits on the generate page
+        const currentPage = window.location.pathname;
+        const showCreditsOn = ['/generate'];
+        
+        if (showCreditsOn.some(page => currentPage === page || currentPage === page + '.html')) {
+            updateCreditDisplay();
+        }
+    }
+
+    // Update credit display
+    function updateCreditDisplay() {
+        let creditDisplay = document.querySelector('.credit-display');
+        if (!creditDisplay) {
+            creditDisplay = document.createElement('div');
+            creditDisplay.className = 'credit-display';
+            creditDisplay.style.cssText = 'position: fixed; top: 90px; right: 20px; background: rgba(0,191,255,0.2); padding: 10px 15px; border-radius: 20px; color: #00bfff; font-weight: 600; border: 1px solid rgba(0,191,255,0.3); z-index: 1000; font-size: 14px;';
+            document.body.appendChild(creditDisplay);
+        }
+        creditDisplay.textContent = `🎨 ${userCredits} credits`;
+        creditDisplay.title = 'Images remaining';
+    }
+
+    // FAQ Accordion
+    function initFAQ() {
+        const faqItems = qsa('.faq-item');
+        
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question') || item.querySelector('h3');
+            const answer = item.querySelector('.faq-answer') || item.querySelector('p');
+            
+            if (!question || !answer) return;
+
+            question.style.cursor = 'pointer';
+            
+            question.addEventListener('click', () => {
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item && otherItem.classList.contains('active')) {
+                        otherItem.classList.remove('active');
+                    }
+                });
+                item.classList.toggle('active');
+            });
+        });
+    }
+
+    // Generate functionality
+    function initGenerate() {
+        const generateBtn = qs('#generateBtn') || qs('.generate .cta') || qs('.cta');
+        const promptBox = qs('#prompt-box') || qs('textarea');
+        
         if (!generateBtn || !promptBox) return;
 
         let outputArea = qs('.output-area');
+        if (!outputArea) {
+            const generateSection = qs('.generate');
+            if (generateSection) {
+                outputArea = document.createElement('div');
+                outputArea.className = 'output-area';
+                outputArea.innerHTML = `
+                    <p class="placeholder-text">Your generated image will appear here</p>
+                    <img id="output-image" style="display:none; max-width:100%; border-radius:12px; margin-top:20px;" alt="Generated image">
+                `;
+                generateSection.appendChild(outputArea);
+            }
+        }
+
         const placeholderText = outputArea?.querySelector('.placeholder-text');
+        const outputImage = outputArea?.querySelector('#output-image');
 
         function setLoading(loading) {
+            if (!outputArea) return;
             if (loading) {
                 outputArea.classList.add('loading');
                 if (placeholderText) placeholderText.textContent = 'Generating your image...';
-                // Remove any existing output images
-                const existingImages = outputArea.querySelectorAll('#output-image');
-                existingImages.forEach(img => img.remove());
+                if (outputImage) outputImage.style.display = 'none';
             } else {
                 outputArea.classList.remove('loading');
+                if (placeholderText) placeholderText.textContent = '';
             }
         }
 
         generateBtn.addEventListener('click', async (e) => {
             e.preventDefault();
+            
+            // Check credits
+            if (userCredits <= 0) {
+                alert('🎨 Out of credits! Upgrade your plan to generate more amazing images.');
+                window.location.href = '/plans';
+                return;
+            }
+            
             const prompt = promptBox.value.trim();
-
+            
             if (!prompt) {
                 alert('Please enter a prompt to generate an image.');
                 promptBox.focus();
@@ -50,124 +130,42 @@
                 });
 
                 const data = await response.json();
-
+                
                 if (!response.ok) {
                     throw new Error(data.error || 'Generation failed');
                 }
 
-                if (data.imageUrl) {
-                    // Remove any existing output images first
-                    const existingImages = outputArea.querySelectorAll('#output-image');
-                    existingImages.forEach(img => img.remove());
-                    
-                    // Create new image
-                    const img = document.createElement('img');
-                    img.id = 'output-image';
-                    img.style.maxWidth = '100%';
-                    img.style.borderRadius = '12px';
-                    img.style.marginTop = '20px';
-                    img.style.display = 'block';
-                    img.src = data.imageUrl;
-                    img.alt = `Generated: ${prompt}`;
-                    outputArea.appendChild(img);
-                    
-                    if (placeholderText) placeholderText.textContent = '';
-                } else {
-                    throw new Error('No image received');
+                // Deduct credit and update UI
+                userCredits--;
+                localStorage.setItem('navai_credits', userCredits);
+                updateCreditDisplay();
+                
+                // Show the REAL AI-generated image
+                if (outputImage) {
+                    outputImage.src = data.imageUrl;
+                    outputImage.alt = `Generated: ${prompt}`;
+                    outputImage.style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error: ' + error.message);
-                if (placeholderText) placeholderText.textContent = 'Failed to generate. Please try again.';
             }
 
             setLoading(false);
         });
     }
 
-    // Stripe Checkout - SIMPLE FIX
-    function initStripeCheckout() {
-        const planButtons = document.querySelectorAll('.plan-button');
-        console.log('Found plan buttons:', planButtons.length);
-        
-        planButtons.forEach(button => {
-            button.addEventListener('click', async (e) => {
-                console.log('Button clicked!');
-                e.preventDefault();
-                
-                const planElement = button.closest('.plan');
-                const planType = planElement.getAttribute('data-plan');
-                console.log('Plan type:', planType);
-                
-                try {
-                    const response = await fetch('/api/create-checkout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            plan: planType
-                        })
-                    });
+    // Contact form handler
+    function initContactForm() {
+        const contactForm = qs('.contact-form');
+        if (!contactForm) return;
 
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.error || 'Payment failed');
-                    }
-
-                    if (data.url) {
-                        window.location.href = data.url;
-                    } else {
-                        throw new Error('No checkout URL received');
-                    }
-                } catch (err) {
-                    console.error('Payment error:', err);
-                    alert('Payment error: ' + err.message);
-                }
-            });
+        contactForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Thank you for your message! We\'ll get back to you soon.');
+            contactForm.reset();
         });
     }
-
-    // Other functions
-    function initPageLoad() { document.body.style.opacity = '1'; }
-    function initFAQ() {
-        const faqItems = qsa('.faq-item');
-        faqItems.forEach(item => {
-            const question = item.querySelector('.faq-question');
-            question?.addEventListener('click', () => {
-                faqItems.forEach(other => other !== item && other.classList.remove('active'));
-                item.classList.toggle('active');
-            });
-        });
-    }
-    function initSmoothNavigation() {
-        const navLinks = qsa('.navbar a[href]');
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                const href = link.getAttribute('href');
-                if (href && !href.startsWith('http') && !href.startsWith('#')) {
-                    e.preventDefault();
-                    document.body.style.opacity = '0.9';
-                    setTimeout(() => window.location.href = href, 50);
-                }
-            });
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        initPageLoad();
-        initSmoothNavigation();
-        if (document.querySelector('.faq-item')) initFAQ();
-        if (document.querySelector('.generate')) initGenerate();
-        if (document.querySelector('.plan-cards')) {
-            console.log('Initializing Stripe checkout...');
-            initStripeCheckout();
-        }
-        console.log('NavAI initialized 🚀');
-    });
-
-})();
 
     // Stripe Checkout for Plans
     function initStripeCheckout() {
@@ -212,3 +210,42 @@
             });
         });
     }
+
+    // Fast navigation with quick visual feedback
+    function initSmoothNavigation() {
+        const navLinks = qsa('.navbar a[href]');
+        
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                const href = link.getAttribute('href');
+                
+                // Only handle internal navigation
+                if (href && !href.startsWith('http') && !href.startsWith('#')) {
+                    e.preventDefault();
+                    
+                    // Quick visual feedback
+                    document.body.style.opacity = '0.9';
+                    document.body.style.transition = 'opacity 0.1s ease';
+                    
+                    // Navigate immediately with no delay
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 50);
+                }
+            });
+        });
+    }
+
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', () => {
+        initPageLoad();
+        initSmoothNavigation();
+        initFAQ();
+        initGenerate();
+        initContactForm();
+        if (document.querySelector('.plan-cards')) initStripeCheckout();
+        
+        console.log('NavAI initialized with credit system 🚀');
+    });
+
+})();
