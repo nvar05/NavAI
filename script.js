@@ -34,7 +34,7 @@
         });
     }
 
-    // Generate functionality
+    // Generate functionality - FIXED VERSION
     function initGenerate() {
         const generateBtn = qs('#generateBtn') || qs('.generate .cta') || qs('.cta');
         const promptBox = qs('#prompt-box') || qs('textarea');
@@ -91,6 +91,14 @@
                     body: JSON.stringify({ prompt })
                 });
 
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    throw new Error('Server error - please try again later');
+                }
+
                 const data = await response.json();
 
                 if (!response.ok) {
@@ -98,14 +106,18 @@
                 }
 
                 // Show the REAL AI-generated image
-                if (outputImage) {
+                if (outputImage && data.imageUrl) {
                     outputImage.src = data.imageUrl;
                     outputImage.alt = `Generated: ${prompt}`;
                     outputImage.style.display = 'block';
+                    if (placeholderText) placeholderText.textContent = '';
+                } else {
+                    throw new Error('No image URL received');
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error: ' + error.message);
+                if (placeholderText) placeholderText.textContent = 'Failed to generate image. Please try again.';
             }
 
             setLoading(false);
@@ -124,7 +136,7 @@
         });
     }
 
-    // Stripe Checkout for Plans Page - FIXED
+    // Simple Stripe Checkout
     function initStripeCheckout() {
         const planButtons = document.querySelectorAll('.plan button');
         
@@ -135,54 +147,22 @@
                 const planElement = button.closest('.plan');
                 const planType = planElement.getAttribute('data-plan');
                 
-                if (!planType) {
-                    alert('Plan type not found. Please try again.');
-                    return;
-                }
+                const planUrls = {
+                    'basic': 'https://buy.stripe.com/test_00g4jN7lF2jE4mE6oo',
+                    'pro': 'https://buy.stripe.com/test_00g4jN7lF2jE4mE6oo',
+                    'unlimited': 'https://buy.stripe.com/test_00g4jN7lF2jE4mE6oo'
+                };
 
-                // Show loading state
-                const originalText = button.textContent;
-                button.textContent = 'Loading...';
-                button.disabled = true;
-
-                try {
-                    console.log('Initiating checkout for plan:', planType);
-                    
-                    const response = await fetch('/api/create-checkout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            plan: planType
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.error || 'Failed to create checkout session');
-                    }
-
-                    if (data.url) {
-                        console.log('Redirecting to Stripe checkout:', data.url);
-                        window.location.href = data.url;
-                    } else {
-                        throw new Error('No checkout URL received from server');
-                    }
-                } catch (err) {
-                    console.error('Stripe Checkout Error:', err);
-                    alert('Checkout failed: ' + err.message);
-                    
-                    // Reset button state
-                    button.textContent = originalText;
-                    button.disabled = false;
+                if (planUrls[planType]) {
+                    window.location.href = planUrls[planType];
+                } else {
+                    alert('Payment system is being set up. Please check back soon!');
                 }
             });
         });
     }
 
-    // Fast navigation with quick visual feedback
+    // Fast navigation
     function initSmoothNavigation() {
         const navLinks = qsa('.navbar a[href]');
 
@@ -190,15 +170,10 @@
             link.addEventListener('click', (e) => {
                 const href = link.getAttribute('href');
 
-                // Only handle internal navigation
                 if (href && !href.startsWith('http') && !href.startsWith('#')) {
                     e.preventDefault();
-
-                    // Quick visual feedback
                     document.body.style.opacity = '0.9';
                     document.body.style.transition = 'opacity 0.1s ease';
-
-                    // Navigate immediately with no delay
                     setTimeout(() => {
                         window.location.href = href;
                     }, 50);
@@ -207,12 +182,11 @@
         });
     }
 
-    // Initialize everything based on current page
+    // Initialize everything
     document.addEventListener('DOMContentLoaded', () => {
         initPageLoad();
         initSmoothNavigation();
 
-        // Page-specific initializations
         if (document.querySelector('.faq-item')) {
             initFAQ();
         }
@@ -225,15 +199,12 @@
             initContactForm();
         }
 
-        // Initialize Stripe checkout on plans page
         if (window.location.pathname.includes('plans') || 
-            window.location.pathname === '/plans.html' ||
             document.querySelector('.plan-cards')) {
-            console.log('Initializing Stripe checkout on plans page...');
             initStripeCheckout();
         }
 
-        console.log('NavAI initialized with fast navigation 🚀');
+        console.log('NavAI initialized 🚀');
     });
 
 })();
