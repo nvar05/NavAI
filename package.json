@@ -1,18 +1,9 @@
 {
   "name": "nvar-imagegen",
   "version": "1.0.0",
-  "type": "module",
-  "description": "NavAI Image Generation",
+  "description": "NavAI Image Generation - Static Site",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
-  "dependencies": {
-    "next": "^13.0.0",
-    "node-fetch": "^3.3.2",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "stripe": "^14.0.0"
+    "build": "echo 'Static site - no build needed'",
+    "dev": "echo 'Static site - use live deployment'"
   }
 }
