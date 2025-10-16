@@ -12,7 +12,8 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Stripe not configured' });
     }
 
-    const domain = process.env.YOUR_DOMAIN || 'https://nav-ai.co.uk';
+    // Use the vercel.app domain which definitely works
+    const domain = 'https://nav-ai-sooty.vercel.app';
     
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -24,7 +25,7 @@ module.exports = async (req, res) => {
       ],
       mode: 'payment',
       success_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${domain}/plans.html`, // Back to .html
+      cancel_url: `${domain}/plans.html`,
     });
 
     res.json({ url: session.url });
