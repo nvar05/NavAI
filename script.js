@@ -6,22 +6,12 @@
     const qs = (selector) => document.querySelector(selector);
     const qsa = (selector) => Array.from(document.querySelectorAll(selector));
 
-    // User credits system
-    let userCredits = localStorage.getItem('navai_credits');
-    if (userCredits === null) {
-        userCredits = 10;
-        localStorage.setItem('navai_credits', userCredits);
-    } else {
-        userCredits = parseInt(userCredits);
-    }
+    let userCredits = localStorage.getItem('navai_credits') || 10;
+    localStorage.setItem('navai_credits', userCredits);
 
     function initPageLoad() {
         document.body.style.opacity = '1';
-        const currentPage = window.location.pathname;
-        const showCreditsOn = ['/generate'];
-        if (showCreditsOn.some(page => currentPage === page || currentPage === page + '.html')) {
-            updateCreditDisplay();
-        }
+        if (window.location.pathname.includes('generate')) updateCreditDisplay();
     }
 
     function updateCreditDisplay() {
@@ -38,62 +28,43 @@
     function initFAQ() {
         const faqItems = qsa('.faq-item');
         faqItems.forEach(item => {
-            const question = item.querySelector('.faq-question') || item.querySelector('h3');
-            const answer = item.querySelector('.faq-answer') || item.querySelector('p');
-            if (!question || !answer) return;
-            question.style.cursor = 'pointer';
-            question.addEventListener('click', () => {
-                faqItems.forEach(otherItem => {
-                    if (otherItem !== item && otherItem.classList.contains('active')) {
-                        otherItem.classList.remove('active');
-                    }
-                });
+            const question = item.querySelector('.faq-question');
+            question?.addEventListener('click', () => {
+                faqItems.forEach(other => other !== item && other.classList.remove('active'));
                 item.classList.toggle('active');
             });
         });
     }
 
     function initGenerate() {
-        const generateBtn = qs('#generateBtn') || qs('.generate .cta') || qs('.cta');
-        const promptBox = qs('#prompt-box') || qs('textarea');
+        const generateBtn = qs('#generateBtn');
+        const promptBox = qs('#prompt-box');
         if (!generateBtn || !promptBox) return;
 
         let outputArea = qs('.output-area');
-        if (!outputArea) {
-            const generateSection = qs('.generate');
-            if (generateSection) {
-                outputArea = document.createElement('div');
-                outputArea.className = 'output-area';
-                outputArea.innerHTML = '<p class="placeholder-text">Your generated image will appear here</p><img id="output-image" style="display:none; max-width:100%; border-radius:12px; margin-top:20px;" alt="Generated image">';
-                generateSection.appendChild(outputArea);
-            }
-        }
-
         const placeholderText = outputArea?.querySelector('.placeholder-text');
-        const outputImage = outputArea?.querySelector('#output-image');
 
         function setLoading(loading) {
-            if (!outputArea) return;
             if (loading) {
                 outputArea.classList.add('loading');
                 if (placeholderText) placeholderText.textContent = 'Generating your image...';
-                if (outputImage) outputImage.style.display = 'none';
+                const existingImages = outputArea.querySelectorAll('#output-image');
+                existingImages.forEach(img => img.remove());
             } else {
                 outputArea.classList.remove('loading');
-                if (placeholderText) placeholderText.textContent = '';
             }
         }
 
         generateBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             if (userCredits <= 0) {
-                alert('�� Out of credits! Upgrade your plan to generate more amazing images.');
+                alert('🎨 Out of credits! Upgrade your plan.');
                 window.location.href = '/plans';
                 return;
             }
             const prompt = promptBox.value.trim();
             if (!prompt) {
-                alert('Please enter a prompt to generate an image.');
+                alert('Please enter a prompt.');
                 promptBox.focus();
                 return;
             }
@@ -109,14 +80,16 @@
                 userCredits--;
                 localStorage.setItem('navai_credits', userCredits);
                 updateCreditDisplay();
-                if (outputImage) {
-                    outputImage.src = data.imageUrl;
-                    outputImage.alt = `Generated: ${prompt}`;
-                    outputImage.style.display = 'block';
-                }
+                const outputImage = document.createElement('img');
+                outputImage.id = 'output-image';
+                outputImage.style.cssText = 'max-width: 100%; border-radius: 12px; margin-top: 20px; display: block;';
+                outputImage.src = data.imageUrl;
+                outputImage.alt = `Generated: ${prompt}`;
+                outputArea.appendChild(outputImage);
+                if (placeholderText) placeholderText.textContent = '';
             } catch (error) {
-                console.error('Error:', error);
                 alert('Error: ' + error.message);
+                if (placeholderText) placeholderText.textContent = 'Failed to generate. Please try again.';
             }
             setLoading(false);
         });
