@@ -728,3 +728,16 @@ textarea#prompt-box:focus {
     overflow: visible;
     box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
 }
+
+/* TEMPORARY FIX - Force buttons to be clickable */
+.plan-button {
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 9999 !important;
+}
+
+.one-time-button {
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 9999 !important;
+}
