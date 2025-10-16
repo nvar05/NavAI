@@ -6,32 +6,18 @@
     const qs = (selector) => document.querySelector(selector);
     const qsa = (selector) => Array.from(document.querySelectorAll(selector));
 
-    // Generate functionality - USING SERVERLESS
+    // Generate functionality - SIMPLE VERSION
     function initGenerate() {
-        const generateBtn = qs('#generateBtn') || qs('.generate .cta') || qs('.cta');
-        const promptBox = qs('#prompt-box') || qs('textarea');
+        const generateBtn = qs('#generateBtn');
+        const promptBox = qs('#prompt-box');
 
         if (!generateBtn || !promptBox) return;
 
         let outputArea = qs('.output-area');
-        if (!outputArea) {
-            const generateSection = qs('.generate');
-            if (generateSection) {
-                outputArea = document.createElement('div');
-                outputArea.className = 'output-area';
-                outputArea.innerHTML = `
-                    <p class="placeholder-text">Your generated image will appear here</p>
-                    <img id="output-image" style="display:none; max-width:100%; border-radius:12px; margin-top:20px;" alt="Generated image">
-                `;
-                generateSection.appendChild(outputArea);
-            }
-        }
-
         const placeholderText = outputArea?.querySelector('.placeholder-text');
-        const outputImage = outputArea?.querySelector('#output-image');
+        const outputImage = qs('#output-image');
 
         function setLoading(loading) {
-            if (!outputArea) return;
             if (loading) {
                 outputArea.classList.add('loading');
                 if (placeholderText) placeholderText.textContent = 'Generating your image...';
@@ -54,7 +40,6 @@
             setLoading(true);
 
             try {
-                // Use serverless function
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {
@@ -69,10 +54,22 @@
                     throw new Error(data.error || 'Generation failed');
                 }
 
-                if (outputImage && data.imageUrl) {
-                    outputImage.src = data.imageUrl;
-                    outputImage.alt = `Generated: ${prompt}`;
-                    outputImage.style.display = 'block';
+                if (data.imageUrl) {
+                    if (!outputImage) {
+                        const img = document.createElement('img');
+                        img.id = 'output-image';
+                        img.style.maxWidth = '100%';
+                        img.style.borderRadius = '12px';
+                        img.style.marginTop = '20px';
+                        img.style.display = 'block';
+                        img.src = data.imageUrl;
+                        img.alt = `Generated: ${prompt}`;
+                        outputArea.appendChild(img);
+                    } else {
+                        outputImage.src = data.imageUrl;
+                        outputImage.alt = `Generated: ${prompt}`;
+                        outputImage.style.display = 'block';
+                    }
                     if (placeholderText) placeholderText.textContent = '';
                 } else {
                     throw new Error('No image received');
@@ -87,7 +84,7 @@
         });
     }
 
-    // Stripe Checkout - USING SERVERLESS
+    // Stripe Checkout
     function initStripeCheckout() {
         const planButtons = document.querySelectorAll('.plan button');
         
@@ -128,7 +125,7 @@
         });
     }
 
-    // Other functions remain the same...
+    // Other functions
     function initPageLoad() { document.body.style.opacity = '1'; }
     function initFAQ() {
         const faqItems = qsa('.faq-item');
