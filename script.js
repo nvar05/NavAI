@@ -85,16 +85,19 @@
         });
     }
 
-    // Stripe Checkout
+    // Stripe Checkout - SIMPLE FIX
     function initStripeCheckout() {
         const planButtons = document.querySelectorAll('.plan-button');
+        console.log('Found plan buttons:', planButtons.length);
         
         planButtons.forEach(button => {
             button.addEventListener('click', async (e) => {
+                console.log('Button clicked!');
                 e.preventDefault();
                 
                 const planElement = button.closest('.plan');
                 const planType = planElement.getAttribute('data-plan');
+                console.log('Plan type:', planType);
                 
                 try {
                     const response = await fetch('/api/create-checkout', {
@@ -157,7 +160,10 @@
         initSmoothNavigation();
         if (document.querySelector('.faq-item')) initFAQ();
         if (document.querySelector('.generate')) initGenerate();
-        if (document.querySelector('.plan-cards')) initStripeCheckout();
+        if (document.querySelector('.plan-cards')) {
+            console.log('Initializing Stripe checkout...');
+            initStripeCheckout();
+        }
         console.log('NavAI initialized 🚀');
     });
 
