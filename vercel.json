@@ -44,6 +44,10 @@
       "dest": "/plans.html"
     },
     {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1.html"
     }

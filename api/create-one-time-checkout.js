@@ -24,7 +24,7 @@ module.exports = async (req, res) => {
       ],
       mode: 'payment',
       success_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${domain}/plans`, // Changed from plans.html to just plans
+      cancel_url: `${domain}/plans.html`, // Back to .html
     });
 
     res.json({ url: session.url });
