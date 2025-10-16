@@ -87,7 +87,7 @@
 
     // Stripe Checkout
     function initStripeCheckout() {
-        const planButtons = document.querySelectorAll('.plan button');
+        const planButtons = document.querySelectorAll('.plan-button');
         
         planButtons.forEach(button => {
             button.addEventListener('click', async (e) => {
