@@ -7,7 +7,14 @@ module.exports = async (req, res) => {
 
   if (req.method === 'POST') {
     try {
-      const { plan } = JSON.parse(req.body);
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      
+      await new Promise((resolve) => {
+        req.on('end', resolve);
+      });
+
+      const { plan } = JSON.parse(body);
       
       const planDetails = {
         basic: { amount: 200, name: 'Basic Plan - 300 Credits' },
