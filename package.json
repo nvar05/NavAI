@@ -5,5 +5,8 @@
   "scripts": {
     "build": "echo 'Static site - no build needed'",
     "dev": "echo 'Static site - use live deployment'"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
   }
 }

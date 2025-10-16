@@ -4,7 +4,7 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+  
   if (req.method === 'POST') {
     try {
       const { prompt } = JSON.parse(req.body);
@@ -64,7 +64,6 @@ module.exports = async (req, res) => {
       throw new Error('Generation timeout');
 
     } catch (error) {
-      console.error('Generation error:', error);
       res.status(500).json({ error: error.message });
     }
   } else {
