@@ -15,13 +15,14 @@
 
         let outputArea = qs('.output-area');
         const placeholderText = outputArea?.querySelector('.placeholder-text');
-        const outputImage = qs('#output-image');
 
         function setLoading(loading) {
             if (loading) {
                 outputArea.classList.add('loading');
                 if (placeholderText) placeholderText.textContent = 'Generating your image...';
-                if (outputImage) outputImage.style.display = 'none';
+                // Remove any existing output images
+                const existingImages = outputArea.querySelectorAll('#output-image');
+                existingImages.forEach(img => img.remove());
             } else {
                 outputArea.classList.remove('loading');
             }
@@ -55,21 +56,21 @@
                 }
 
                 if (data.imageUrl) {
-                    if (!outputImage) {
-                        const img = document.createElement('img');
-                        img.id = 'output-image';
-                        img.style.maxWidth = '100%';
-                        img.style.borderRadius = '12px';
-                        img.style.marginTop = '20px';
-                        img.style.display = 'block';
-                        img.src = data.imageUrl;
-                        img.alt = `Generated: ${prompt}`;
-                        outputArea.appendChild(img);
-                    } else {
-                        outputImage.src = data.imageUrl;
-                        outputImage.alt = `Generated: ${prompt}`;
-                        outputImage.style.display = 'block';
-                    }
+                    // Remove any existing output images first
+                    const existingImages = outputArea.querySelectorAll('#output-image');
+                    existingImages.forEach(img => img.remove());
+                    
+                    // Create new image
+                    const img = document.createElement('img');
+                    img.id = 'output-image';
+                    img.style.maxWidth = '100%';
+                    img.style.borderRadius = '12px';
+                    img.style.marginTop = '20px';
+                    img.style.display = 'block';
+                    img.src = data.imageUrl;
+                    img.alt = `Generated: ${prompt}`;
+                    outputArea.appendChild(img);
+                    
                     if (placeholderText) placeholderText.textContent = '';
                 } else {
                     throw new Error('No image received');
