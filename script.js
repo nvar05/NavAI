@@ -6,7 +6,7 @@
     const qs = (selector) => document.querySelector(selector);
     const qsa = (selector) => Array.from(document.querySelectorAll(selector));
 
-    // Generate functionality
+    // Generate functionality - USING SERVERLESS
     function initGenerate() {
         const generateBtn = qs('#generateBtn') || qs('.generate .cta') || qs('.cta');
         const promptBox = qs('#prompt-box') || qs('textarea');
@@ -54,6 +54,7 @@
             setLoading(true);
 
             try {
+                // Use serverless function
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {
@@ -86,7 +87,7 @@
         });
     }
 
-    // Stripe Checkout
+    // Stripe Checkout - USING SERVERLESS
     function initStripeCheckout() {
         const planButtons = document.querySelectorAll('.plan button');
         
@@ -98,7 +99,7 @@
                 const planType = planElement.getAttribute('data-plan');
                 
                 try {
-                    const response = await fetch('/api/create-checkout-session', {
+                    const response = await fetch('/api/create-checkout', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -127,7 +128,7 @@
         });
     }
 
-    // Other functions
+    // Other functions remain the same...
     function initPageLoad() { document.body.style.opacity = '1'; }
     function initFAQ() {
         const faqItems = qsa('.faq-item');

@@ -1,11 +1,13 @@
-import Stripe from 'stripe';
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
-      const { plan } = req.body;
+      const { plan } = JSON.parse(req.body);
       
       const planDetails = {
         basic: { amount: 200, name: 'Basic Plan - 300 Credits' },
@@ -32,12 +34,11 @@ export default async function handler(req, res) {
         cancel_url: 'https://nav-ai.co.uk/plans.html',
       });
 
-      res.status(200).json({ url: session.url });
+      res.json({ url: session.url });
     } catch (err) {
-      console.error('Stripe error:', err);
       res.status(500).json({ error: err.message });
     }
   } else {
     res.status(405).json({ error: 'Method not allowed' });
   }
-}
+};
