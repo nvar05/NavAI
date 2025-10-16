@@ -40,6 +40,10 @@
       "dest": "/api/create-one-time-checkout.js"
     },
     {
+      "src": "/plans",
+      "dest": "/plans.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1.html"
     }

@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
       ],
       mode: 'subscription',
       success_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${domain}/plans.html`,
+      cancel_url: `${domain}/plans`, // Changed from plans.html to just plans
     });
 
     res.json({ url: session.url });
