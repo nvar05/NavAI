@@ -6,7 +6,15 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { prompt } = JSON.parse(req.body);
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    
+    await new Promise((resolve) => {
+      req.on('end', resolve);
+    });
+
+    const { prompt } = JSON.parse(body);
+    
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
