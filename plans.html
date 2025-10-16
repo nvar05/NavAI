@@ -100,3 +100,23 @@ setTimeout(() => {
     });
 }, 1000);
 </script>
+
+<script>
+// Debug - find what's blocking clicks
+setTimeout(() => {
+    const plansSection = document.querySelector('.plans');
+    if (plansSection) {
+        const overlays = plansSection.querySelectorAll('*');
+        overlays.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            const styles = window.getComputedStyle(el);
+            if (styles.pointerEvents === 'all' || 
+                styles.position === 'absolute' || 
+                styles.position === 'fixed' ||
+                parseFloat(styles.zIndex) > 100) {
+                console.log('Potential overlay:', el, styles);
+            }
+        });
+    }
+}, 1000);
+</script>
