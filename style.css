@@ -441,3 +441,155 @@ textarea#prompt-box:focus {
         gap: 20px;
     }
 }
+
+/* Plans Section Styles */
+.plans-subtitle {
+    font-size: 1.2rem;
+    color: #888;
+    margin-bottom: 50px;
+}
+
+.plan {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 30px;
+    position: relative;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.plan:hover {
+    transform: translateY(-5px);
+    border-color: #667eea;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.plan.popular {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    transform: scale(1.05);
+}
+
+.plan.popular:hover {
+    transform: scale(1.05) translateY(-5px);
+}
+
+.popular-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 20px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.plan-features {
+    margin-bottom: 25px;
+}
+
+.image-count {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.price {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.per-image {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.savings {
+    color: #4ade80;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.plan-desc {
+    color: #ccc;
+    font-style: italic;
+    margin-top: 10px;
+}
+
+.plan-button {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.plan-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+}
+
+.one-time-offer {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.one-time-offer h3 {
+    color: white;
+    margin-bottom: 10px;
+}
+
+.one-time-offer p {
+    color: #ccc;
+    margin-bottom: 20px;
+}
+
+.one-time-button {
+    padding: 12px 30px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.one-time-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .plan-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .plan.popular {
+        transform: none;
+    }
+    
+    .plan.popular:hover {
+        transform: translateY(-5px);
+    }
+}

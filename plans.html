@@ -20,32 +20,51 @@
 </header>
 
 <section class="plans">
-    <h2>Our Plans</h2>
+    <h2>Choose Your Plan</h2>
+    <p class="plans-subtitle">Start with 10 free credits. No credit card required.</p>
+    
     <div class="plan-cards">
         <div class="plan" data-plan="basic">
             <h3>Basic</h3>
-            <p>300 images/month</p>
-            <p><strong>£2/month</strong></p>
-            <button>Subscribe</button>
+            <div class="plan-features">
+                <p class="image-count">300 images/month</p>
+                <p class="price">£2/month</p>
+                <p class="per-image">£0.0067 per image</p>
+                <p class="plan-desc">Great for casual use</p>
+            </div>
+            <button class="plan-button">Subscribe</button>
         </div>
-        <div class="plan" data-plan="pro">
+        
+        <div class="plan popular" data-plan="pro">
+            <div class="popular-badge">Most Popular</div>
             <h3>Pro</h3>
-            <p>800 images/month</p>
-            <p><strong>£5/month</strong></p>
-            <button>Subscribe</button>
+            <div class="plan-features">
+                <p class="image-count">800 images/month</p>
+                <p class="price">£5/month</p>
+                <p class="per-image">£0.00625 per image</p>
+                <p class="savings">7% cheaper</p>
+                <p class="plan-desc">Perfect for regular creators</p>
+            </div>
+            <button class="plan-button">Subscribe</button>
         </div>
+        
         <div class="plan" data-plan="unlimited">
             <h3>Unlimited</h3>
-            <p>2000 images/month</p>
-            <p><strong>£10/month</strong></p>
-            <button>Subscribe</button>
+            <div class="plan-features">
+                <p class="image-count">2,000 images/month</p>
+                <p class="price">£10/month</p>
+                <p class="per-image">£0.005 per image</p>
+                <p class="savings">25% cheaper</p>
+                <p class="plan-desc">Best value for power users</p>
+            </div>
+            <button class="plan-button">Subscribe</button>
         </div>
     </div>
     
-    <div style="text-align: center; margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px;">
-        <h3>One-Time Purchase</h3>
-        <p>100 credits for just <strong>99p</strong></p>
-        <button onclick="buyOneTimeCredits()" class="cta">Buy 100 Credits - 99p</button>
+    <div class="one-time-offer">
+        <h3>Not ready for a subscription?</h3>
+        <p>Get 100 credits for just <strong>99p</strong> one-time payment</p>
+        <button class="one-time-button" data-plan="onetime">Buy One-Time Credits</button>
     </div>
 </section>
 
@@ -53,11 +72,6 @@
     <p>&copy; 2025 NavAI. All rights reserved.</p>
 </footer>
 
-<script>
-function buyOneTimeCredits() {
-    alert('One-time purchase coming soon! For now, please choose a subscription plan.');
-}
-</script>
 <script src="script.js?v=2"></script>
 </body>
 </html>
