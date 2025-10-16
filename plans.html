@@ -81,6 +81,22 @@ function buyOneTimeCredits() {
 }
 </script>
 <script src="script.js?v=2"></script>
+<style>
+.plan-button, .one-time-button {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 9999 !important;
+}
+</style>
+<style>
+.plan-button, .one-time-button {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 9999 !important;
+}
+</style>
 </body>
 </html>
 
@@ -118,5 +134,35 @@ setTimeout(() => {
             }
         });
     }
+}, 1000);
+</script>
+
+<script>
+// Remove any overlays blocking clicks
+setTimeout(() => {
+    // Find elements with high z-index that might be overlays
+    const allElements = document.querySelectorAll('*');
+    const overlays = [];
+    
+    allElements.forEach(el => {
+        const styles = window.getComputedStyle(el);
+        const zIndex = parseInt(styles.zIndex);
+        const position = styles.position;
+        
+        // Look for potential overlays
+        if ((zIndex > 100 && position !== 'static') || 
+            styles.pointerEvents === 'all' && el.offsetWidth > 100 && el.offsetHeight > 100) {
+            console.log('Found potential overlay:', el, 'z-index:', zIndex);
+            overlays.push(el);
+        }
+    });
+    
+    // Temporarily hide potential overlays
+    overlays.forEach(overlay => {
+        if (!overlay.classList.contains('plan-button') && !overlay.classList.contains('one-time-button')) {
+            console.log('Hiding potential overlay:', overlay);
+            overlay.style.display = 'none';
+        }
+    });
 }, 1000);
 </script>
