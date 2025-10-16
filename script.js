@@ -168,3 +168,47 @@
     });
 
 })();
+
+    // Stripe Checkout for Plans
+    function initStripeCheckout() {
+        const planButtons = document.querySelectorAll('.plan-button');
+        console.log('Stripe: Found buttons:', planButtons.length);
+        
+        planButtons.forEach(button => {
+            button.addEventListener('click', async (e) => {
+                console.log('Stripe: Button clicked');
+                e.preventDefault();
+                
+                const planElement = button.closest('.plan');
+                const planType = planElement.getAttribute('data-plan');
+                console.log('Stripe: Plan type:', planType);
+                
+                try {
+                    const response = await fetch('/api/create-checkout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            plan: planType
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Payment failed');
+                    }
+
+                    if (data.url) {
+                        window.location.href = data.url;
+                    } else {
+                        throw new Error('No checkout URL received');
+                    }
+                } catch (err) {
+                    console.error('Payment error:', err);
+                    alert('Payment error: ' + err.message);
+                }
+            });
+        });
+    }
