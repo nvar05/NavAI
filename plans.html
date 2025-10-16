@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plans - NavAI</title>
     <link rel="stylesheet" href="style.css?v=2">
+    <style>
+        /* FORCE buttons to be clickable */
+        .plan-button, .offer-button {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            position: relative !important;
+            z-index: 9999 !important;
+        }
+        
+        /* Remove any potential overlays */
+        body * {
+            pointer-events: auto !important;
+        }
+    </style>
 </head>
 <body>
 <header class="navbar">
@@ -32,7 +46,7 @@
                 <p class="per-image">£0.0067 per image</p>
                 <p class="plan-desc">Great for casual use</p>
             </div>
-            <button class="plan-button">Subscribe</button>
+            <button class="plan-button" onclick="handlePlanClick('basic')">Subscribe</button>
         </div>
         
         <div class="plan popular" data-plan="pro">
@@ -45,7 +59,7 @@
                 <p class="savings">7% cheaper</p>
                 <p class="plan-desc">Perfect for regular creators</p>
             </div>
-            <button class="plan-button">Subscribe</button>
+            <button class="plan-button" onclick="handlePlanClick('pro')">Subscribe</button>
         </div>
         
         <div class="plan" data-plan="unlimited">
@@ -57,7 +71,7 @@
                 <p class="savings">25% cheaper</p>
                 <p class="plan-desc">Best value for power users</p>
             </div>
-            <button class="plan-button">Subscribe</button>
+            <button class="plan-button" onclick="handlePlanClick('unlimited')">Subscribe</button>
         </div>
     </div>
     
@@ -67,7 +81,7 @@
         <p class="offer-text">Get <strong class="highlight">100 credits</strong> for just</p>
         <p class="offer-price">99p</p>
         <p class="offer-subtext">One-time payment • No commitment</p>
-        <button class="offer-button">Buy Now - 99p</button>
+        <button class="offer-button" onclick="handleOneTimeClick()">Buy Now - 99p</button>
     </div>
 </section>
 
@@ -76,64 +90,54 @@
 </footer>
 
 <script>
-// Simple button handlers for testing
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded - attaching button handlers');
+// SIMPLE CLICK HANDLERS - This will definitely work
+function handlePlanClick(plan) {
+    console.log('Plan button clicked:', plan);
+    alert('Redirecting to Stripe checkout for ' + plan + ' plan...');
     
-    // Handle subscription buttons
-    const planButtons = document.querySelectorAll('.plan-button');
-    planButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Plan button clicked!');
-            
-            const plan = this.closest('.plan').getAttribute('data-plan');
-            alert('Redirecting to Stripe checkout for ' + plan + ' plan...');
-            
-            // Call your Stripe checkout API
-            fetch('/api/create-checkout', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ plan: plan })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.url) {
-                    window.location.href = data.url;
-                } else {
-                    alert('Error: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to create checkout session');
-            });
-        });
+    // Call Stripe API
+    fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ plan: plan })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to create checkout session. Please try again.');
     });
-    
-    // Handle one-time purchase button
-    const oneTimeButton = document.querySelector('.offer-button');
-    if (oneTimeButton) {
-        oneTimeButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('One-time button clicked!');
-            alert('One-time purchase coming soon!');
-        });
-    }
-    
-    console.log('Button handlers attached:', planButtons.length);
-});
+}
 
-// Debug: Check if buttons are clickable
-setTimeout(() => {
+function handleOneTimeClick() {
+    console.log('One-time button clicked');
+    alert('One-time purchase coming soon! For now, please choose a subscription plan.');
+}
+
+// Make absolutely sure buttons are clickable
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded - buttons should be clickable');
+    
+    // Force all buttons to be clickable
     const buttons = document.querySelectorAll('button');
-    console.log('All buttons found:', buttons.length);
-    buttons.forEach(btn => {
-        console.log('Button:', btn.textContent, 'Clickable:', window.getComputedStyle(btn).pointerEvents);
+    buttons.forEach(button => {
+        button.style.pointerEvents = 'auto';
+        button.style.cursor = 'pointer';
+        button.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        };
     });
-}, 1000);
+    
+    console.log('Buttons initialized:', buttons.length);
+});
 </script>
 </body>
 </html>
