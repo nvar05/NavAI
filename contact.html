@@ -4,7 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact - NavAI</title>
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+        .message.success {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+        .message.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff0000;
+            color: #ff0000;
+        }
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
 <header class="navbar">
@@ -21,10 +44,14 @@
 
 <section class="contact">
     <h2>Contact Us</h2>
+    <p>Have questions? We'd love to hear from you.</p>
+    
+    <div id="message" class="message"></div>
+    
     <form class="contact-form">
-        <input type="text" placeholder="Your Name" required>
-        <input type="email" placeholder="Your Email" required>
-        <textarea placeholder="Your Message" required></textarea>
+        <input type="text" name="name" placeholder="Your Name" required>
+        <input type="email" name="email" placeholder="Your Email" required>
+        <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
         <button type="submit">Send Message</button>
     </form>
 </section>
@@ -32,6 +59,54 @@
 <footer class="footer">
     <p>&copy; 2025 NavAI. All rights reserved.</p>
 </footer>
-<script src="script.js?v=2"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const contactForm = document.querySelector('.contact-form');
+    const messageDiv = document.getElementById('message');
+    
+    function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.className = 'message ' + type;
+        messageDiv.style.display = 'block';
+    }
+    
+    contactForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(contactForm);
+        const data = {
+            name: formData.get('name'),
+            email: formData.get('email'),
+            message: formData.get('message')
+        };
+        
+        // Show loading state
+        contactForm.classList.add('loading');
+        showMessage('Sending message...', '');
+        
+        try {
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showMessage('✅ Message sent successfully! We\'ll get back to you soon.', 'success');
+                contactForm.reset();
+            } else {
+                showMessage('❌ Error: ' + result.error, 'error');
+            }
+        } catch (error) {
+            showMessage('❌ Failed to send message. Please try again.', 'error');
+        } finally {
+            contactForm.classList.remove('loading');
+        }
+    });
+});
+</script>
 </body>
 </html>

@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "node-fetch": "^3.3.2",
+    "nodemailer": "^7.0.9",
     "stripe": "^19.1.0"
   }
 }
