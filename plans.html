@@ -62,9 +62,12 @@
     </div>
     
     <div class="one-time-offer">
-        <h3>Not ready for a subscription?</h3>
-        <p>Get 100 credits for just <strong>99p</strong> one-time payment</p>
-        <button class="one-time-button" data-plan="onetime">Buy One-Time Credits</button>
+        <div class="offer-badge">Limited Time</div>
+        <h3>💰 Not ready for a subscription?</h3>
+        <p class="offer-text">Get <strong class="highlight">100 credits</strong> for just</p>
+        <p class="offer-price">99p</p>
+        <p class="offer-subtext">One-time payment • No commitment</p>
+        <button class="offer-button" onclick="buyOneTimeCredits()">Buy Now - 99p</button>
     </div>
 </section>
 
@@ -72,6 +75,11 @@
     <p>&copy; 2025 NavAI. All rights reserved.</p>
 </footer>
 
+<script>
+function buyOneTimeCredits() {
+    alert('One-time purchase coming soon! For now, please choose a subscription plan.');
+}
+</script>
 <script src="script.js?v=2"></script>
 </body>
 </html>
