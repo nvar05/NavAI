@@ -67,7 +67,7 @@
         <p class="offer-text">Get <strong class="highlight">100 credits</strong> for just</p>
         <p class="offer-price">99p</p>
         <p class="offer-subtext">One-time payment • No commitment</p>
-        <button class="offer-button" onclick="buyOneTimeCredits()">Buy Now - 99p</button>
+        <button class="offer-button">Buy Now - 99p</button>
     </div>
 </section>
 
@@ -76,93 +76,64 @@
 </footer>
 
 <script>
-function buyOneTimeCredits() {
-    alert('One-time purchase coming soon! For now, please choose a subscription plan.');
-}
-</script>
-<script src="script.js?v=2"></script>
-<style>
-.plan-button, .one-time-button {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    position: relative !important;
-    z-index: 9999 !important;
-}
-</style>
-<style>
-.plan-button, .one-time-button {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    position: relative !important;
-    z-index: 9999 !important;
-}
-</style>
-</body>
-</html>
-
-<script>
-// Simple test - remove this after testing
-console.log('Plans page loaded');
-document.addEventListener('click', function(e) {
-    console.log('Click detected on:', e.target);
-});
-
-// Test if buttons exist and are clickable
-setTimeout(() => {
-    const buttons = document.querySelectorAll('.plan-button, .one-time-button');
-    console.log('Buttons found:', buttons.length);
-    buttons.forEach(btn => {
-        console.log('Button:', btn, 'Clickable:', btn.style.pointerEvents);
+// Simple button handlers for testing
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - attaching button handlers');
+    
+    // Handle subscription buttons
+    const planButtons = document.querySelectorAll('.plan-button');
+    planButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Plan button clicked!');
+            
+            const plan = this.closest('.plan').getAttribute('data-plan');
+            alert('Redirecting to Stripe checkout for ' + plan + ' plan...');
+            
+            // Call your Stripe checkout API
+            fetch('/api/create-checkout', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ plan: plan })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to create checkout session');
+            });
+        });
     });
-}, 1000);
-</script>
-
-<script>
-// Debug - find what's blocking clicks
-setTimeout(() => {
-    const plansSection = document.querySelector('.plans');
-    if (plansSection) {
-        const overlays = plansSection.querySelectorAll('*');
-        overlays.forEach(el => {
-            const rect = el.getBoundingClientRect();
-            const styles = window.getComputedStyle(el);
-            if (styles.pointerEvents === 'all' || 
-                styles.position === 'absolute' || 
-                styles.position === 'fixed' ||
-                parseFloat(styles.zIndex) > 100) {
-                console.log('Potential overlay:', el, styles);
-            }
+    
+    // Handle one-time purchase button
+    const oneTimeButton = document.querySelector('.offer-button');
+    if (oneTimeButton) {
+        oneTimeButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('One-time button clicked!');
+            alert('One-time purchase coming soon!');
         });
     }
-}, 1000);
-</script>
+    
+    console.log('Button handlers attached:', planButtons.length);
+});
 
-<script>
-// Remove any overlays blocking clicks
+// Debug: Check if buttons are clickable
 setTimeout(() => {
-    // Find elements with high z-index that might be overlays
-    const allElements = document.querySelectorAll('*');
-    const overlays = [];
-    
-    allElements.forEach(el => {
-        const styles = window.getComputedStyle(el);
-        const zIndex = parseInt(styles.zIndex);
-        const position = styles.position;
-        
-        // Look for potential overlays
-        if ((zIndex > 100 && position !== 'static') || 
-            styles.pointerEvents === 'all' && el.offsetWidth > 100 && el.offsetHeight > 100) {
-            console.log('Found potential overlay:', el, 'z-index:', zIndex);
-            overlays.push(el);
-        }
-    });
-    
-    // Temporarily hide potential overlays
-    overlays.forEach(overlay => {
-        if (!overlay.classList.contains('plan-button') && !overlay.classList.contains('one-time-button')) {
-            console.log('Hiding potential overlay:', overlay);
-            overlay.style.display = 'none';
-        }
+    const buttons = document.querySelectorAll('button');
+    console.log('All buttons found:', buttons.length);
+    buttons.forEach(btn => {
+        console.log('Button:', btn.textContent, 'Clickable:', window.getComputedStyle(btn).pointerEvents);
     });
 }, 1000);
 </script>
+</body>
+</html>
