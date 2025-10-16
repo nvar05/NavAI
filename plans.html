@@ -5,6 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plans - NavAI</title>
     <link rel="stylesheet" href="style.css?v=2">
+    <style>
+    /* EMERGENCY FIX - Fix button positioning */
+    .plan-cards {
+        display: block !important;
+        position: relative !important;
+    }
+    
+    .plan {
+        position: relative !important;
+        margin-bottom: 30px !important;
+        display: block !important;
+    }
+    
+    .plan-button, .offer-button {
+        position: relative !important;
+        z-index: 99999 !important;
+        pointer-events: auto !important;
+        transform: none !important;
+    }
+    
+    /* Force all content to be visible */
+    body, html {
+        overflow: visible !important;
+        height: auto !important;
+    }
+    
+    .plans {
+        position: relative !important;
+        overflow: visible !important;
+    }
+    </style>
 </head>
 <body>
 <header class="navbar">
@@ -24,6 +55,7 @@
     <p class="plans-subtitle">Start with 10 free credits. No credit card required.</p>
     
     <div class="plan-cards">
+        <!-- BASIC PLAN -->
         <div class="plan" data-plan="basic">
             <h3>Basic</h3>
             <div class="plan-features">
@@ -35,6 +67,7 @@
             <button class="plan-button" onclick="handlePlanClick('basic')">Subscribe</button>
         </div>
         
+        <!-- PRO PLAN -->
         <div class="plan popular" data-plan="pro">
             <div class="popular-badge">Most Popular</div>
             <h3>Pro</h3>
@@ -48,6 +81,7 @@
             <button class="plan-button" onclick="handlePlanClick('pro')">Subscribe</button>
         </div>
         
+        <!-- UNLIMITED PLAN -->
         <div class="plan" data-plan="unlimited">
             <h3>Unlimited</h3>
             <div class="plan-features">
@@ -61,6 +95,7 @@
         </div>
     </div>
     
+    <!-- ONE-TIME OFFER -->
     <div class="one-time-offer">
         <div class="offer-badge">Limited Time</div>
         <h3>💰 Not ready for a subscription?</h3>
