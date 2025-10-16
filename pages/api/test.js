@@ -1,7 +1,6 @@
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
   res.status(200).json({ 
-    working: true,
-    message: "API is running!",
+    message: "API is working!",
     timestamp: new Date().toISOString()
   });
 }
