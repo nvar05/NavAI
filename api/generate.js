@@ -20,7 +20,8 @@ module.exports = async (req, res) => {
     // Use dynamic import for node-fetch
     const fetch = (await import('node-fetch')).default;
 
-    const modelVersion = "stability-ai/sdxl:7762fd07cf82c948538e41f63a2dbacc420d6aaa4f7e5ccee83e649e9c17ae4e";
+    // USE THE CORRECT MODEL ID
+    const modelVersion = "stability-ai/sdxl:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe";
     
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
