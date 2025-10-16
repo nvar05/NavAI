@@ -6,34 +6,33 @@
     <title>Plans - NavAI</title>
     <link rel="stylesheet" href="style.css?v=2">
     <style>
-    /* EMERGENCY FIX - Fix button positioning */
-    .plan-cards {
-        display: block !important;
+    /* FIX: Keep buttons clickable but restore layout */
+    .plan-button, .offer-button {
         position: relative !important;
+        z-index: 9999 !important;
+        pointer-events: auto !important;
+    }
+    
+    /* Ensure plans display side by side */
+    .plan-cards {
+        display: flex !important;
+        justify-content: center !important;
+        gap: 40px !important;
+        flex-wrap: wrap !important;
     }
     
     .plan {
-        position: relative !important;
-        margin-bottom: 30px !important;
+        width: 280px !important;
         display: block !important;
-    }
-    
-    .plan-button, .offer-button {
         position: relative !important;
-        z-index: 99999 !important;
-        pointer-events: auto !important;
-        transform: none !important;
     }
     
-    /* Force all content to be visible */
-    body, html {
-        overflow: visible !important;
-        height: auto !important;
-    }
-    
-    .plans {
-        position: relative !important;
-        overflow: visible !important;
+    /* Remove any overlays that might block clicks */
+    .plan-cards::before,
+    .plan-cards::after,
+    .plan::before,
+    .plan::after {
+        display: none !important;
     }
     </style>
 </head>
@@ -55,7 +54,6 @@
     <p class="plans-subtitle">Start with 10 free credits. No credit card required.</p>
     
     <div class="plan-cards">
-        <!-- BASIC PLAN -->
         <div class="plan" data-plan="basic">
             <h3>Basic</h3>
             <div class="plan-features">
@@ -67,7 +65,6 @@
             <button class="plan-button" onclick="handlePlanClick('basic')">Subscribe</button>
         </div>
         
-        <!-- PRO PLAN -->
         <div class="plan popular" data-plan="pro">
             <div class="popular-badge">Most Popular</div>
             <h3>Pro</h3>
@@ -81,7 +78,6 @@
             <button class="plan-button" onclick="handlePlanClick('pro')">Subscribe</button>
         </div>
         
-        <!-- UNLIMITED PLAN -->
         <div class="plan" data-plan="unlimited">
             <h3>Unlimited</h3>
             <div class="plan-features">
@@ -95,7 +91,6 @@
         </div>
     </div>
     
-    <!-- ONE-TIME OFFER -->
     <div class="one-time-offer">
         <div class="offer-badge">Limited Time</div>
         <h3>💰 Not ready for a subscription?</h3>
@@ -111,7 +106,6 @@
 </footer>
 
 <script>
-// SIMPLE FUNCTIONS THAT WILL DEFINITELY WORK
 function handlePlanClick(plan) {
     alert('Plan clicked: ' + plan + ' - Stripe integration coming soon!');
     console.log('Plan selected:', plan);
@@ -121,8 +115,6 @@ function handleOneTimeClick() {
     alert('One-time purchase coming soon!');
     console.log('One-time purchase clicked');
 }
-
-console.log('Plans page JavaScript loaded successfully!');
 </script>
 </body>
 </html>
