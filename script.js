@@ -7,7 +7,111 @@
     const qsa = (selector) => Array.from(document.querySelectorAll(selector));
 
     let userCredits = localStorage.getItem('navai_credits') || 10;
+    let currentUserId = localStorage.getItem('navai_userId');
     localStorage.setItem('navai_credits', userCredits);
+
+    function showSignupPopup() {
+        const popup = document.createElement('div');
+        popup.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; align-items: center;
+            justify-content: center; z-index: 10000;
+        `;
+        
+        popup.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%;">
+                <h2 style="margin: 0 0 15px 0; color: #333;">Get 10 Free Credits! 🎨</h2>
+                <p style="margin: 0 0 20px 0; color: #666;">Sign up to start generating AI images</p>
+                
+                <input type="text" id="signupUsername" placeholder="Username" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
+                <input type="password" id="signupPassword" placeholder="Password" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
+                
+                <button id="signupBtn" style="width: 100%; padding: 12px; background: #00bfff; color: white; border: none; border-radius: 6px; margin: 8px 0; cursor: pointer;">
+                    Sign Up & Get 10 Credits
+                </button>
+                <button id="loginBtn" style="width: 100%; padding: 12px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; margin: 8px 0; cursor: pointer;">
+                    Already have an account? Login
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(popup);
+
+        // Signup handler
+        qs('#signupBtn').addEventListener('click', async () => {
+            const username = qs('#signupUsername').value.trim();
+            const password = qs('#signupPassword').value.trim();
+            
+            if (!username || !password) {
+                alert('Please enter username and password');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'signup', username, password })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUserId = data.userId;
+                    userCredits = data.credits;
+                    localStorage.setItem('navai_userId', currentUserId);
+                    localStorage.setItem('navai_credits', userCredits);
+                    document.body.removeChild(popup);
+                    updateCreditDisplay();
+                    alert('Welcome! You have 10 free credits to start with!');
+                } else {
+                    alert(data.message || 'Signup failed');
+                }
+            } catch (error) {
+                alert('Signup error: ' + error.message);
+            }
+        });
+
+        // Login handler
+        qs('#loginBtn').addEventListener('click', async () => {
+            const username = qs('#signupUsername').value.trim();
+            const password = qs('#signupPassword').value.trim();
+            
+            if (!username || !password) {
+                alert('Please enter username and password');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'login', username, password })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUserId = data.userId;
+                    userCredits = data.credits;
+                    localStorage.setItem('navai_userId', currentUserId);
+                    localStorage.setItem('navai_credits', userCredits);
+                    document.body.removeChild(popup);
+                    updateCreditDisplay();
+                    alert('Welcome back! You have ' + data.credits + ' credits');
+                } else {
+                    alert(data.message || 'Login failed');
+                }
+            } catch (error) {
+                alert('Login error: ' + error.message);
+            }
+        });
+
+        // Close popup when clicking outside
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) {
+                document.body.removeChild(popup);
+            }
+        });
+    }
 
     function initPageLoad() {
         document.body.style.opacity = '1';
@@ -57,29 +161,41 @@
 
         generateBtn.addEventListener('click', async (e) => {
             e.preventDefault();
+            
+            // Check if user is logged in
+            if (!currentUserId) {
+                showSignupPopup();
+                return;
+            }
+
             if (userCredits <= 0) {
                 alert('🎨 Out of credits! Upgrade your plan.');
                 window.location.href = '/plans';
                 return;
             }
+
             const prompt = promptBox.value.trim();
             if (!prompt) {
                 alert('Please enter a prompt.');
                 promptBox.focus();
                 return;
             }
+
             setLoading(true);
             try {
-                const response = await fetch('/api/generate', {
+                const response = await fetch('/api/generate-with-credits', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ prompt })
+                    body: JSON.stringify({ prompt, userId: currentUserId })
                 });
                 const data = await response.json();
+                
                 if (!response.ok) throw new Error(data.error || 'Generation failed');
-                userCredits--;
+                
+                userCredits = data.credits;
                 localStorage.setItem('navai_credits', userCredits);
                 updateCreditDisplay();
+                
                 const outputImage = document.createElement('img');
                 outputImage.id = 'output-image';
                 outputImage.style.cssText = 'max-width: 100%; border-radius: 12px; margin-top: 20px; display: block;';
@@ -112,13 +228,19 @@
             btn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                
+                if (!currentUserId) {
+                    showSignupPopup();
+                    return;
+                }
+                
                 console.log('BUTTON CLICKED!');
                 const plan = this.closest('.plan').getAttribute('data-plan');
                 alert('Button works! Plan: ' + plan);
-                fetch('/api/create-checkout', {
+                fetch('/api/create-checkout-with-user', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ plan: plan })
+                    body: JSON.stringify({ plan: plan, userId: currentUserId })
                 })
                 .then(r => r.json())
                 .then(data => {
