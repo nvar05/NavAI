@@ -1,80 +1,90 @@
+const fs = require('fs');
+const path = require('path');
+const Replicate = require('replicate');
+
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
+});
+
+// Simple user storage
+const usersFile = path.join(process.cwd(), 'users.json');
+
+function loadUsers() {
+  try {
+    if (fs.existsSync(usersFile)) {
+      return JSON.parse(fs.readFileSync(usersFile, 'utf8'));
+    }
+  } catch (error) {
+    console.error('Error loading users:', error);
+  }
+  return {};
+}
+
+function saveUsers(users) {
+  try {
+    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error saving users:', error);
+    return false;
+  }
+}
+
 module.exports = async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    let body = '';
-    req.on('data', chunk => body += chunk);
+    const { prompt, userId } = JSON.parse(req.body);
     
-    await new Promise((resolve) => {
-      req.on('end', resolve);
-    });
-
-    const { prompt } = JSON.parse(body);
-    
-    if (!prompt) {
-      return res.status(400).json({ error: 'Prompt is required' });
+    if (!prompt || !userId) {
+      return res.status(400).json({ error: 'Missing prompt or user ID' });
     }
 
-    // Use dynamic import for node-fetch
-    const fetch = (await import('node-fetch')).default;
-
-    // USE THE CORRECT MODEL ID
-    const modelVersion = "stability-ai/sdxl:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe";
+    // Check user credits
+    const users = loadUsers();
+    const user = users[userId];
     
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        version: modelVersion,
-        input: { 
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    if (user.credits < 1) {
+      return res.status(400).json({ error: 'Insufficient credits' });
+    }
+
+    // Deduct 1 credit
+    user.credits -= 1;
+    users[userId] = user;
+    
+    if (!saveUsers(users)) {
+      return res.status(500).json({ error: 'Failed to update credits' });
+    }
+
+    // Generate image
+    const output = await replicate.run(
+      "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+      {
+        input: {
           prompt: prompt,
-          width: 1024,
-          height: 1024
+          width: 512,
+          height: 512,
+          num_outputs: 1
         }
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || `API error: ${response.status}`);
-    }
-
-    const prediction = await response.json();
-    
-    let result;
-    let attempts = 0;
-    const maxAttempts = 60;
-    
-    while (attempts < maxAttempts) {
-      const statusResponse = await fetch(prediction.urls.get, {
-        headers: {
-          'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
-        },
-      });
-      
-      result = await statusResponse.json();
-      
-      if (result.status === 'succeeded') {
-        return res.json({ imageUrl: result.output[0] });
-      } else if (result.status === 'failed') {
-        throw new Error('AI generation failed: ' + (result.error || 'Unknown error'));
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      attempts++;
-    }
-    
-    throw new Error('Generation timeout');
+    );
+
+    res.json({ 
+      success: true, 
+      imageUrl: output[0],
+      creditsRemaining: user.credits
+    });
 
   } catch (error) {
     console.error('Generation error:', error);
-    res.status(500).json({ 
-      error: error.message || 'AI generation failed'
-    });
+    res.status(500).json({ error: 'Failed to generate image' });
   }
 };
