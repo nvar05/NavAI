@@ -279,23 +279,6 @@ function handleOneTimeClick() {
             document.body.removeChild(popup);
             showLoginPopup();
         });
-                
-                if (data.success) {
-                    const user = { userId: data.userId, credits: data.credits };
-                    currentUserId = data.userId;
-                    userCredits = data.credits;
-                    userEmail = email;
-                    
-                    localStorage.setItem('navai_userId', currentUserId);
-                    localStorage.setItem('navai_credits', userCredits);
-                    localStorage.setItem('navai_email', email);
-                    
-                    document.body.removeChild(popup);
-                    updateCreditDisplay();
-                    updateAuthUI();
-                    showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
-                } else {
-                    showMessagePopup('Login Failed', data.message, false);
                 }
             } catch (error) {
                 showMessagePopup('Login Error', 'Could not log in. Please try again.', false);
