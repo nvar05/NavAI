@@ -1,6 +1,4 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./users.db');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -11,7 +9,12 @@ module.exports = async (req, res) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    // For Vercel, we need to get the raw body
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    await new Promise((resolve) => req.on('end', resolve));
+    
+    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error('Webhook signature verification failed.', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -22,26 +25,28 @@ module.exports = async (req, res) => {
     case 'checkout.session.completed':
       const session = event.data.object;
       
-      const userId = session.metadata.userId;
-      const planType = session.metadata.planType;
+      // Get user ID from session metadata (we need to pass this from frontend)
+      const userId = session.metadata?.userId;
+      const planType = session.metadata?.planType;
       
-      // Define credit amounts for each plan
-      const creditAmounts = {
-        basic: 100,
-        pro: 800,
-        unlimited: 1500
-      };
-      
-      const creditsToAdd = creditAmounts[planType] || 0;
-      
-      if (userId && creditsToAdd > 0) {
-        db.run('UPDATE users SET credits = credits + ? WHERE id = ?', [creditsToAdd, userId], function(err) {
-          if (err) {
-            console.error('Failed to add credits:', err);
-          } else {
-            console.log(`Added ${creditsToAdd} credits to user ${userId}`);
-          }
-        });
+      if (userId && planType) {
+        // Define credit amounts for each plan
+        const creditAmounts = {
+          basic: 100,
+          pro: 800,
+          unlimited: 1500
+        };
+        
+        const creditsToAdd = creditAmounts[planType] || 100;
+        
+        // Update user credits in localStorage (via frontend)
+        // Note: This is a limitation - we can't directly update localStorage from server
+        // In a real app, you'd use a database
+        
+        console.log(`Payment successful: User ${userId} bought ${planType} plan, should add ${creditsToAdd} credits`);
+        
+        // For now, we'll log it and the frontend will need to handle the credit update
+        // when the user returns to the site
       }
       break;
       

@@ -40,6 +40,53 @@
         if (userIndex >= 0) {
             users[userIndex].credits = newCredits;
             localStorage.setItem('navai_users', JSON.stringify(users));
+            return true;
+        }
+        return false;
+    }
+
+    function getUserCredits(userId) {
+        const users = getStoredUsers();
+        const user = users.find(u => u.userId === userId);
+        return user ? user.credits : 10;
+    }
+
+    // PAYMENT SUCCESS HANDLER
+    function handlePaymentSuccess() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentSuccess = urlParams.get('payment_success');
+        const plan = urlParams.get('plan');
+        const userId = urlParams.get('user_id');
+        
+        if (paymentSuccess === 'true' && plan && userId) {
+            const creditAmounts = {
+                basic: 100,
+                pro: 800,
+                unlimited: 1500
+            };
+            
+            const creditsToAdd = creditAmounts[plan] || 100;
+            
+            // Update current user's credits
+            if (userId === currentUserId) {
+                const currentCredits = getUserCredits(userId);
+                const newCredits = currentCredits + creditsToAdd;
+                
+                updateUserCredits(userId, newCredits);
+                userCredits = newCredits;
+                localStorage.setItem('navai_credits', newCredits);
+                updateCreditDisplay();
+                updateAuthUI();
+                
+                showMessagePopup(
+                    'Payment Successful! 🎉', 
+                    `Your account has been credited with ${creditsToAdd} credits! You now have ${newCredits} credits total.`
+                );
+            }
+            
+            // Clean URL
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
         }
     }
 
@@ -124,7 +171,6 @@
                 return;
             }
 
-            // Check if user already exists
             const existingUser = getStoredUsers().find(u => u.email === email);
             if (existingUser) {
                 showMessagePopup('Email Exists', 'This email is already registered. Please log in instead.', false);
@@ -140,7 +186,6 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Save user to localStorage
                     saveUser(email, password, data.userId, data.credits);
                     
                     currentUserId = data.userId;
@@ -172,7 +217,6 @@
                 return;
             }
 
-            // Validate user in localStorage
             const user = validateUser(email, password);
             if (!user) {
                 showMessagePopup('Login Failed', 'Invalid email or password', false);
@@ -256,7 +300,6 @@
                 return;
             }
 
-            // Validate user in localStorage
             const user = validateUser(email, password);
             if (!user) {
                 showMessagePopup('Login Failed', 'Invalid email or password', false);
@@ -385,6 +428,7 @@
         document.body.style.opacity = '1';
         updateAuthUI();
         updateCreditDisplay();
+        handlePaymentSuccess(); // Check for successful payments on page load
     }
 
     function initFAQ() {
@@ -492,8 +536,8 @@
                     return;
                 }
                 
-                console.log('BUTTON CLICKED!');
                 const plan = this.closest('.plan').getAttribute('data-plan');
+                
                 fetch('/api/create-checkout', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -501,8 +545,11 @@
                 })
                 .then(r => r.json())
                 .then(data => {
-                    if (data.url) window.location.href = data.url;
-                    else showMessagePopup('Payment Error', 'Could not start payment process.', false);
+                    if (data.url) {
+                        window.location.href = data.url;
+                    } else {
+                        showMessagePopup('Payment Error', 'Could not start payment process.', false);
+                    }
                 })
                 .catch(err => showMessagePopup('Error', err.message, false));
             };

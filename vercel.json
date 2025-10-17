@@ -56,6 +56,10 @@
       "dest": "/api/auth.js"
     },
     {
+      "src": "/success",
+      "dest": "/success.html"
+    },
+    {
       "src": "/plans",
       "dest": "/plans.html"
     },

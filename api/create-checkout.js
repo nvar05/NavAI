@@ -12,8 +12,12 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Stripe not configured' });
     }
 
-    const { plan } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const { plan, userId } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     
+    if (!userId) {
+      return res.status(400).json({ error: 'User not logged in' });
+    }
+
     const prices = {
       basic: 'price_1SIzMALGtnLpxero9ODFsPzy',
       pro: 'price_1SIzMkLGtnLpxerooYEqLTAe',
@@ -26,7 +30,6 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Invalid plan: ' + plan });
     }
 
-    // Use www subdomain which works
     const domain = 'https://www.nav-ai.co.uk';
     
     const session = await stripe.checkout.sessions.create({
@@ -38,8 +41,12 @@ module.exports = async (req, res) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}&user_id=${userId}&plan=${plan}&payment_success=true`,
       cancel_url: `${domain}/plans.html`,
+      metadata: {
+        userId: userId,
+        planType: plan
+      }
     });
 
     res.json({ url: session.url });
