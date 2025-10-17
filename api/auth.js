@@ -1,23 +1,24 @@
-const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
 const path = require('path');
 
-// Use absolute path for database
-const dbPath = path.join(process.cwd(), 'users.db');
-const db = new sqlite3.Database(dbPath);
+// Path to users JSON file
+const usersPath = path.join(process.cwd(), 'users.json');
 
-// Create users table
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE,
-        password TEXT,
-        credits INTEGER DEFAULT 10,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-});
+// Helper functions to read/write users
+function readUsers() {
+    try {
+        const data = fs.readFileSync(usersPath, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        return [];
+    }
+}
+
+function writeUsers(users) {
+    fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+}
 
 module.exports = async (req, res) => {
-    // Set JSON header
     res.setHeader('Content-Type', 'application/json');
     
     if (req.method !== 'POST') {
@@ -31,51 +32,47 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
+        const users = readUsers();
+
         if (action === 'signup') {
-            // Check if user exists
-            db.get('SELECT id FROM users WHERE email = ?', [email], (err, row) => {
-                if (err) {
-                    console.error('Database error:', err);
-                    return res.status(500).json({ error: 'Database error' });
-                }
-                if (row) {
-                    return res.json({ success: false, message: 'Email already exists' });
-                }
-                
-                // Create new user with 10 free credits
-                db.run('INSERT INTO users (email, password, credits) VALUES (?, ?, 10)', 
-                      [email, password], function(err) {
-                    if (err) {
-                        console.error('Insert error:', err);
-                        return res.status(500).json({ error: 'Failed to create user' });
-                    }
-                    res.json({ 
-                        success: true, 
-                        message: 'User created',
-                        credits: 10,
-                        userId: this.lastID
-                    });
-                });
+            // Check if user already exists
+            const existingUser = users.find(user => user.email === email);
+            if (existingUser) {
+                return res.json({ success: false, message: 'Email already exists' });
+            }
+            
+            // Create new user
+            const newUser = {
+                id: 'user_' + Date.now(),
+                email: email,
+                password: password, // In real app, hash this!
+                credits: 10,
+                createdAt: new Date().toISOString()
+            };
+            
+            users.push(newUser);
+            writeUsers(users);
+            
+            res.json({ 
+                success: true, 
+                message: 'User created successfully',
+                credits: newUser.credits,
+                userId: newUser.id
             });
             
         } else if (action === 'login') {
-            db.get('SELECT id, email, credits FROM users WHERE email = ? AND password = ?', 
-                  [email, password], (err, row) => {
-                if (err) {
-                    console.error('Database error:', err);
-                    return res.status(500).json({ error: 'Database error' });
-                }
-                if (row) {
-                    res.json({ 
-                        success: true, 
-                        message: 'Login successful',
-                        credits: row.credits,
-                        userId: row.id
-                    });
-                } else {
-                    res.json({ success: false, message: 'Invalid email or password' });
-                }
-            });
+            // Find user and check password
+            const user = users.find(u => u.email === email && u.password === password);
+            if (user) {
+                res.json({ 
+                    success: true, 
+                    message: 'Login successful',
+                    credits: user.credits,
+                    userId: user.id
+                });
+            } else {
+                res.json({ success: false, message: 'Invalid email or password' });
+            }
             
         } else {
             res.status(400).json({ error: 'Invalid action' });

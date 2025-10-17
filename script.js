@@ -86,7 +86,7 @@
             document.body.removeChild(popup);
         });
 
-        // Signup handler - FRONTEND ONLY
+        // Signup handler - REAL AUTH
         qs('#signupBtn').addEventListener('click', async () => {
             const email = qs('#signupEmail').value.trim();
             const password = qs('#signupPassword').value.trim();
@@ -96,22 +96,36 @@
                 return;
             }
 
-            // Simple frontend auth - no API call needed
-            currentUserId = 'user_' + Date.now();
-            userCredits = 10;
-            userEmail = email;
-            
-            localStorage.setItem('navai_userId', currentUserId);
-            localStorage.setItem('navai_credits', userCredits);
-            localStorage.setItem('navai_email', email);
-            
-            document.body.removeChild(popup);
-            updateCreditDisplay();
-            updateAuthUI();
-            showMessagePopup('Welcome! 🎉', 'You have 10 free credits to start generating amazing AI images!');
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'signup', email, password })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUserId = data.userId;
+                    userCredits = data.credits;
+                    userEmail = email;
+                    
+                    localStorage.setItem('navai_userId', currentUserId);
+                    localStorage.setItem('navai_credits', userCredits);
+                    localStorage.setItem('navai_email', email);
+                    
+                    document.body.removeChild(popup);
+                    updateCreditDisplay();
+                    updateAuthUI();
+                    showMessagePopup('Welcome! 🎉', 'You have 10 free credits to start generating amazing AI images!');
+                } else {
+                    showMessagePopup('Signup Failed', data.message, false);
+                }
+            } catch (error) {
+                showMessagePopup('Signup Error', 'Could not create account. Please try again.', false);
+            }
         });
 
-        // Login handler - FRONTEND ONLY
+        // Login handler - REAL AUTH
         qs('#loginBtn').addEventListener('click', async () => {
             const email = qs('#signupEmail').value.trim();
             const password = qs('#signupPassword').value.trim();
@@ -121,19 +135,33 @@
                 return;
             }
 
-            // Simple frontend auth - any email/password works for demo
-            currentUserId = 'user_' + email.replace(/[^a-zA-Z0-9]/g, '');
-            userCredits = parseInt(localStorage.getItem('navai_credits')) || 10;
-            userEmail = email;
-            
-            localStorage.setItem('navai_userId', currentUserId);
-            localStorage.setItem('navai_credits', userCredits);
-            localStorage.setItem('navai_email', email);
-            
-            document.body.removeChild(popup);
-            updateCreditDisplay();
-            updateAuthUI();
-            showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'login', email, password })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUserId = data.userId;
+                    userCredits = data.credits;
+                    userEmail = email;
+                    
+                    localStorage.setItem('navai_userId', currentUserId);
+                    localStorage.setItem('navai_credits', userCredits);
+                    localStorage.setItem('navai_email', email);
+                    
+                    document.body.removeChild(popup);
+                    updateCreditDisplay();
+                    updateAuthUI();
+                    showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
+                } else {
+                    showMessagePopup('Login Failed', data.message, false);
+                }
+            } catch (error) {
+                showMessagePopup('Login Error', 'Could not log in. Please try again.', false);
+            }
         });
 
         // Close popup when clicking outside
@@ -177,7 +205,7 @@
             document.body.removeChild(popup);
         });
 
-        // Login handler - FRONTEND ONLY
+        // Login handler - REAL AUTH
         qs('#loginBtnMain').addEventListener('click', async () => {
             const email = qs('#loginEmail').value.trim();
             const password = qs('#loginPassword').value.trim();
@@ -187,19 +215,33 @@
                 return;
             }
 
-            // Simple frontend auth
-            currentUserId = 'user_' + email.replace(/[^a-zA-Z0-9]/g, '');
-            userCredits = parseInt(localStorage.getItem('navai_credits')) || 10;
-            userEmail = email;
-            
-            localStorage.setItem('navai_userId', currentUserId);
-            localStorage.setItem('navai_credits', userCredits);
-            localStorage.setItem('navai_email', email);
-            
-            document.body.removeChild(popup);
-            updateCreditDisplay();
-            updateAuthUI();
-            showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'login', email, password })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUserId = data.userId;
+                    userCredits = data.credits;
+                    userEmail = email;
+                    
+                    localStorage.setItem('navai_userId', currentUserId);
+                    localStorage.setItem('navai_credits', userCredits);
+                    localStorage.setItem('navai_email', email);
+                    
+                    document.body.removeChild(popup);
+                    updateCreditDisplay();
+                    updateAuthUI();
+                    showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
+                } else {
+                    showMessagePopup('Login Failed', data.message, false);
+                }
+            } catch (error) {
+                showMessagePopup('Login Error', 'Could not log in. Please try again.', false);
+            }
         });
 
         // Switch to signup
@@ -303,6 +345,7 @@
         updateCreditDisplay(); // Show credits only on generate page
     }
 
+    // ... REST OF YOUR EXISTING CODE REMAINS THE SAME ...
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
         const promptBox = qs('#prompt-box');
