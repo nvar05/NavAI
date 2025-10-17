@@ -8,6 +8,7 @@
 
     let userCredits = localStorage.getItem('navai_credits') || 10;
     let currentUserId = localStorage.getItem('navai_userId');
+    let userEmail = localStorage.getItem('navai_email');
     localStorage.setItem('navai_credits', userCredits);
 
     function showSignupPopup() {
@@ -44,7 +45,7 @@
             document.body.removeChild(popup);
         });
 
-        // Signup handler
+        // Signup handler - FRONTEND ONLY
         qs('#signupBtn').addEventListener('click', async () => {
             const email = qs('#signupEmail').value.trim();
             const password = qs('#signupPassword').value.trim();
@@ -54,32 +55,22 @@
                 return;
             }
 
-            try {
-                const response = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'signup', email, password })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentUserId = data.userId;
-                    userCredits = data.credits;
-                    localStorage.setItem('navai_userId', currentUserId);
-                    localStorage.setItem('navai_credits', userCredits);
-                    document.body.removeChild(popup);
-                    updateCreditDisplay();
-                    updateAuthUI();
-                    alert('Welcome! You have 10 free credits to start with!');
-                } else {
-                    alert(data.message || 'Signup failed');
-                }
-            } catch (error) {
-                alert('Signup error: ' + error.message);
-            }
+            // Simple frontend auth - no API call needed
+            currentUserId = 'user_' + Date.now();
+            userCredits = 10;
+            userEmail = email;
+            
+            localStorage.setItem('navai_userId', currentUserId);
+            localStorage.setItem('navai_credits', userCredits);
+            localStorage.setItem('navai_email', email);
+            
+            document.body.removeChild(popup);
+            updateCreditDisplay();
+            updateAuthUI();
+            alert('Welcome! You have 10 free credits to start with!');
         });
 
-        // Login handler
+        // Login handler - FRONTEND ONLY
         qs('#loginBtn').addEventListener('click', async () => {
             const email = qs('#signupEmail').value.trim();
             const password = qs('#signupPassword').value.trim();
@@ -89,29 +80,19 @@
                 return;
             }
 
-            try {
-                const response = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'login', email, password })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentUserId = data.userId;
-                    userCredits = data.credits;
-                    localStorage.setItem('navai_userId', currentUserId);
-                    localStorage.setItem('navai_credits', userCredits);
-                    document.body.removeChild(popup);
-                    updateCreditDisplay();
-                    updateAuthUI();
-                    alert('Welcome back! You have ' + data.credits + ' credits');
-                } else {
-                    alert(data.message || 'Login failed');
-                }
-            } catch (error) {
-                alert('Login error: ' + error.message);
-            }
+            // Simple frontend auth - any email/password works for demo
+            currentUserId = 'user_' + email.replace(/[^a-zA-Z0-9]/g, '');
+            userCredits = parseInt(localStorage.getItem('navai_credits')) || 10;
+            userEmail = email;
+            
+            localStorage.setItem('navai_userId', currentUserId);
+            localStorage.setItem('navai_credits', userCredits);
+            localStorage.setItem('navai_email', email);
+            
+            document.body.removeChild(popup);
+            updateCreditDisplay();
+            updateAuthUI();
+            alert('Welcome back! You have ' + userCredits + ' credits');
         });
 
         // Close popup when clicking outside
@@ -155,7 +136,7 @@
             document.body.removeChild(popup);
         });
 
-        // Login handler
+        // Login handler - FRONTEND ONLY
         qs('#loginBtnMain').addEventListener('click', async () => {
             const email = qs('#loginEmail').value.trim();
             const password = qs('#loginPassword').value.trim();
@@ -165,29 +146,19 @@
                 return;
             }
 
-            try {
-                const response = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'login', email, password })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentUserId = data.userId;
-                    userCredits = data.credits;
-                    localStorage.setItem('navai_userId', currentUserId);
-                    localStorage.setItem('navai_credits', userCredits);
-                    document.body.removeChild(popup);
-                    updateCreditDisplay();
-                    updateAuthUI();
-                    alert('Welcome back! You have ' + data.credits + ' credits');
-                } else {
-                    alert(data.message || 'Login failed');
-                }
-            } catch (error) {
-                alert('Login error: ' + error.message);
-            }
+            // Simple frontend auth
+            currentUserId = 'user_' + email.replace(/[^a-zA-Z0-9]/g, '');
+            userCredits = parseInt(localStorage.getItem('navai_credits')) || 10;
+            userEmail = email;
+            
+            localStorage.setItem('navai_userId', currentUserId);
+            localStorage.setItem('navai_credits', userCredits);
+            localStorage.setItem('navai_email', email);
+            
+            document.body.removeChild(popup);
+            updateCreditDisplay();
+            updateAuthUI();
+            alert('Welcome back! You have ' + userCredits + ' credits');
         });
 
         // Switch to signup
@@ -215,9 +186,9 @@
         }
 
         if (currentUserId) {
-            authButton.textContent = '👤 Account';
+            authButton.textContent = '👤 ' + (userEmail || 'Account');
             authButton.onclick = () => {
-                alert(`Logged in with ${userCredits} credits\nUser ID: ${currentUserId}`);
+                alert(`Logged in as: ${userEmail}\nCredits: ${userCredits}\nUser ID: ${currentUserId}`);
             };
         } else {
             authButton.textContent = '👤 Sign In';
@@ -245,16 +216,8 @@
         updateCreditDisplay(); // Show credits only on generate page
     }
 
-    function initFAQ() {
-        const faqItems = qsa('.faq-item');
-        faqItems.forEach(item => {
-            const question = item.querySelector('.faq-question');
-            question?.addEventListener('click', () => {
-                faqItems.forEach(other => other !== item && other.classList.remove('active'));
-                item.classList.toggle('active');
-            });
-        });
-    }
+    // ... REST OF YOUR EXISTING CODE (initGenerate, initStripeCheckout, etc.) ...
+    // KEEP ALL YOUR EXISTING FUNCTIONS THE SAME
 
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
@@ -299,16 +262,16 @@
 
             setLoading(true);
             try {
-                const response = await fetch('/api/generate-with-credits', {
+                const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ prompt, userId: currentUserId })
+                    body: JSON.stringify({ prompt })
                 });
                 const data = await response.json();
                 
                 if (!response.ok) throw new Error(data.error || 'Generation failed');
                 
-                userCredits = data.credits;
+                userCredits--;
                 localStorage.setItem('navai_credits', userCredits);
                 updateCreditDisplay();
                 
@@ -353,7 +316,7 @@
                 console.log('BUTTON CLICKED!');
                 const plan = this.closest('.plan').getAttribute('data-plan');
                 alert('Button works! Plan: ' + plan);
-                fetch('/api/create-checkout-with-user', {
+                fetch('/api/create-checkout', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ plan: plan, userId: currentUserId })
@@ -378,6 +341,17 @@
                     document.body.style.opacity = '0.9';
                     setTimeout(() => window.location.href = href, 50);
                 }
+            });
+        });
+    }
+
+    function initFAQ() {
+        const faqItems = qsa('.faq-item');
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            question?.addEventListener('click', () => {
+                faqItems.forEach(other => other !== item && other.classList.remove('active'));
+                item.classList.toggle('active');
             });
         });
     }
