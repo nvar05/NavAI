@@ -1,34 +1,14 @@
-const fs = require('fs');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 const Replicate = require('replicate');
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-// Simple user storage
-const usersFile = path.join(process.cwd(), 'users.json');
-
-function loadUsers() {
-  try {
-    if (fs.existsSync(usersFile)) {
-      return JSON.parse(fs.readFileSync(usersFile, 'utf8'));
-    }
-  } catch (error) {
-    console.error('Error loading users:', error);
-  }
-  return {};
-}
-
-function saveUsers(users) {
-  try {
-    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error saving users:', error);
-    return false;
-  }
-}
+// Initialize Supabase
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
@@ -38,17 +18,27 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { prompt, userId } = JSON.parse(req.body);
+    let body = '';
+    for await (const chunk of req) {
+      body += chunk;
+    }
+
+    const { prompt, userId } = JSON.parse(body);
     
     if (!prompt || !userId) {
       return res.status(400).json({ error: 'Missing prompt or user ID' });
     }
 
-    // Check user credits
-    const users = loadUsers();
-    const user = users[userId];
-    
-    if (!user) {
+    console.log('Generation request for user:', userId);
+
+    // Check user credits in Supabase
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('credits, email')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user) {
       return res.status(400).json({ error: 'User not found' });
     }
 
@@ -56,11 +46,16 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
+    console.log('User credits before deduction:', user.credits);
+
     // Deduct 1 credit
-    user.credits -= 1;
-    users[userId] = user;
-    
-    if (!saveUsers(users)) {
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ credits: user.credits - 1 })
+      .eq('id', userId);
+
+    if (updateError) {
+      console.error('Credit update error:', updateError);
       return res.status(500).json({ error: 'Failed to update credits' });
     }
 
@@ -77,14 +72,38 @@ module.exports = async (req, res) => {
       }
     );
 
+    console.log('Image generated successfully for user:', userId);
+
     res.json({ 
       success: true, 
       imageUrl: output[0],
-      creditsRemaining: user.credits
+      creditsRemaining: user.credits - 1
     });
 
   } catch (error) {
     console.error('Generation error:', error);
-    res.status(500).json({ error: 'Failed to generate image' });
+    
+    // If generation failed, refund the credit
+    try {
+      const { userId } = JSON.parse(body);
+      if (userId) {
+        const { data: user } = await supabase
+          .from('users')
+          .select('credits')
+          .eq('id', userId)
+          .single();
+          
+        if (user) {
+          await supabase
+            .from('users')
+            .update({ credits: user.credits + 1 })
+            .eq('id', userId);
+        }
+      }
+    } catch (refundError) {
+      console.error('Failed to refund credit:', refundError);
+    }
+    
+    res.status(500).json({ error: 'Failed to generate image: ' + error.message });
   }
 };
