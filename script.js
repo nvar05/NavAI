@@ -1,37 +1,3 @@
-// GLOBAL PAYMENT FUNCTIONS
-function handlePlanClick(plan) {
-    console.log('Plan clicked:', plan);
-    
-    const currentUserId = localStorage.getItem('navai_userId');
-    console.log('User ID:', currentUserId);
-    
-    if (!currentUserId) {
-        alert('Please log in first!');
-        return;
-    }
-    
-    fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-            plan: plan, 
-            userId: currentUserId 
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.url) {
-            window.location.href = data.url;
-        } else {
-            alert('Payment Error: ' + (data.error || 'Could not start payment process.'));
-        }
-    })
-    .catch(err => {
-        console.error('Fetch error:', err);
-        alert('Error: ' + err.message);
-    });
-}
-
 function handleOneTimeClick() {
     console.log('One-time payment clicked');
     
@@ -278,69 +244,6 @@ function handleOneTimeClick() {
         qs('#loginBtn').addEventListener('click', () => {
             document.body.removeChild(popup);
             showLoginPopup();
-        });
-                }
-            } catch (error) {
-                showMessagePopup('Login Error', 'Could not log in. Please try again.', false);
-            }
-            return;
-            try {
-                const response = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'login', email, password })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    const user = { userId: data.userId, credits: data.credits };
-                    currentUserId = data.userId;
-                    userCredits = data.credits;
-                    userEmail = email;
-                    
-                    localStorage.setItem('navai_userId', currentUserId);
-                    localStorage.setItem('navai_credits', userCredits);
-                    localStorage.setItem('navai_email', email);
-                    
-                    document.body.removeChild(popup);
-                    updateCreditDisplay();
-                    updateAuthUI();
-                    showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
-                } else {
-                    showMessagePopup('Login Failed', data.message, false);
-                }
-            } catch (error) {
-                showMessagePopup('Login Error', 'Could not log in. Please try again.', false);
-            }
-            return;
-
-            try {
-                const response = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'login', email, password })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentUserId = user.userId;
-                    userCredits = user.credits;
-                    userEmail = email;
-                    
-                    localStorage.setItem('navai_userId', currentUserId);
-                    localStorage.setItem('navai_credits', userCredits);
-                    localStorage.setItem('navai_email', email);
-                    
-                    document.body.removeChild(popup);
-                    updateCreditDisplay();
-                    updateAuthUI();
-                    showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
-                } else {
-                    showMessagePopup('Login Failed', data.message, false);
-                }
-            } catch (error) {
-                showMessagePopup('Login Error', 'Could not log in. Please try again.', false);
-            }
         });
 
         popup.addEventListener('click', (e) => {
