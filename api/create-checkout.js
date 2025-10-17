@@ -1,51 +1,9 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const fs = require('fs');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
-// Path to users JSON file
-const usersPath = '/tmp/users.json';
-
-// Helper functions to read/write users
-function readUsers() {
-    try {
-        if (fs.existsSync(usersPath)) {
-            const data = fs.readFileSync(usersPath, 'utf8');
-            return JSON.parse(data);
-        }
-    } catch (error) {
-        console.log('No users file found');
-    }
-    return {};
-}
-
-function writeUsers(users) {
-    try {
-        fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
-        return true;
-    } catch (error) {
-        console.error('Error writing users:', error);
-        return false;
-    }
-}
-
-function addCreditsToUser(userId, creditsToAdd) {
-    const users = readUsers();
-    let userUpdated = false;
-    
-    for (const email in users) {
-        if (users[email].id === userId) {
-            users[email].credits += creditsToAdd;
-            userUpdated = true;
-            break;
-        }
-    }
-    
-    if (userUpdated) {
-        writeUsers(users);
-        return true;
-    }
-    return false;
-}
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
@@ -81,14 +39,6 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Invalid plan: ' + plan });
         }
 
-        const creditAmounts = {
-            basic: 100,
-            pro: 800,
-            unlimited: 1500
-        };
-
-        const creditsToAdd = creditAmounts[plan] || 100;
-        
         const domain = 'https://www.nav-ai.co.uk';
         
         const session = await stripe.checkout.sessions.create({
@@ -100,12 +50,12 @@ module.exports = async (req, res) => {
                 },
             ],
             mode: 'subscription',
-            success_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}&user_id=${userId}&plan=${plan}&credits=${creditsToAdd}&payment_success=true`,
+            success_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${domain}/plans.html`,
+            client_reference_id: userId,
             metadata: {
                 userId: userId,
-                planType: plan,
-                credits: creditsToAdd.toString()
+                planType: plan
             }
         });
 
