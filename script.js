@@ -62,7 +62,8 @@
             const creditAmounts = {
                 basic: 100,
                 pro: 800,
-                unlimited: 1500
+                unlimited: 1500,
+                onetime: 100
             };
             
             const creditsToAdd = creditAmounts[plan] || 100;
@@ -88,6 +89,70 @@
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
         }
+    }
+
+    // PAYMENT BUTTON HANDLERS
+    function handlePlanClick(plan) {
+        console.log('Plan clicked:', plan);
+        
+        if (!currentUserId) {
+            showSignupPopup();
+            return;
+        }
+        
+        console.log('User ID:', currentUserId);
+        
+        fetch('/api/create-checkout', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                plan: plan, 
+                userId: currentUserId 
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                showMessagePopup('Payment Error', data.error || 'Could not start payment process.', false);
+            }
+        })
+        .catch(err => {
+            console.error('Fetch error:', err);
+            showMessagePopup('Error', err.message, false);
+        });
+    }
+
+    function handleOneTimeClick() {
+        console.log('One-time payment clicked');
+        
+        if (!currentUserId) {
+            showSignupPopup();
+            return;
+        }
+        
+        console.log('User ID:', currentUserId);
+        
+        fetch('/api/create-one-time-checkout', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                userId: currentUserId 
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                showMessagePopup('Payment Error', data.error || 'Could not start payment process.', false);
+            }
+        })
+        .catch(err => {
+            console.error('Fetch error:', err);
+            showMessagePopup('Error', err.message, false);
+        });
     }
 
     function showMessagePopup(title, message, isSuccess = true) {
@@ -428,7 +493,7 @@
         document.body.style.opacity = '1';
         updateAuthUI();
         updateCreditDisplay();
-        handlePaymentSuccess(); // Check for successful payments on page load
+        handlePaymentSuccess();
     }
 
     function initFAQ() {
@@ -523,39 +588,6 @@
         });
     }
 
-    function initStripeCheckout() {
-        const buttons = document.querySelectorAll('.plan-button');
-        console.log('Found buttons:', buttons.length);
-        buttons.forEach(btn => {
-            btn.onclick = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (!currentUserId) {
-                    showSignupPopup();
-                    return;
-                }
-                
-                const plan = this.closest('.plan').getAttribute('data-plan');
-                
-                fetch('/api/create-checkout', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ plan: plan, userId: currentUserId })
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.url) {
-                        window.location.href = data.url;
-                    } else {
-                        showMessagePopup('Payment Error', 'Could not start payment process.', false);
-                    }
-                })
-                .catch(err => showMessagePopup('Error', err.message, false));
-            };
-        });
-    }
-
     function initSmoothNavigation() {
         const navLinks = qsa('.navbar a[href]');
         navLinks.forEach(link => {
@@ -576,7 +608,6 @@
         initFAQ();
         initGenerate();
         initContactForm();
-        if (document.querySelector('.plan-cards')) initStripeCheckout();
         console.log('NavAI initialized 🚀');
     });
 })();
