@@ -436,7 +436,7 @@ function handleOneTimeClick() {
         });
     }
 
-    // GENERATE BUTTON FUNCTIONALITY
+    // GENERATE BUTTON FUNCTIONALITY - FIXED VERSION
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
         const promptBox = qs('#prompt-box');
@@ -482,8 +482,19 @@ function handleOneTimeClick() {
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ prompt })
+                    body: JSON.stringify({ 
+                        prompt: prompt,
+                        userId: currentUserId  // FIXED: Added userId
+                    })
                 });
+                
+                // Check if response is JSON before parsing
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error('Server error - please try again later');
+                }
+                
                 const data = await response.json();
                 
                 if (!response.ok) throw new Error(data.error || 'Generation failed');
