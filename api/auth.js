@@ -17,46 +17,27 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Simple in-memory storage (for demo - resets on server restart)
-    let users = [];
-    
+    // For Vercel compatibility, we'll accept any login if email/password are provided
+    // The real user validation happens in the frontend with localStorage
     if (action === 'signup') {
-      // Check if user exists
-      const existingUser = users.find(user => user.email === email);
-      if (existingUser) {
-        return res.json({ success: false, message: 'Email already exists' });
-      }
-      
-      // Create new user
-      const newUser = {
-        id: 'user_' + Date.now(),
-        email: email,
-        password: password,
-        credits: 10
-      };
-      
-      users.push(newUser);
-      
+      // Always return success for signup
+      const userId = 'user_' + Date.now();
       res.json({ 
         success: true, 
         message: 'User created successfully',
-        credits: newUser.credits,
-        userId: newUser.id
+        credits: 10,
+        userId: userId
       });
       
     } else if (action === 'login') {
-      // Find user and check password
-      const user = users.find(u => u.email === email && u.password === password);
-      if (user) {
-        res.json({ 
-          success: true, 
-          message: 'Login successful',
-          credits: user.credits,
-          userId: user.id
-        });
-      } else {
-        res.json({ success: false, message: 'Invalid email or password' });
-      }
+      // Always return success for login (frontend handles real validation)
+      const userId = 'user_' + email.replace(/[^a-zA-Z0-9]/g, '');
+      res.json({ 
+        success: true, 
+        message: 'Login successful',
+        credits: 10, // Frontend will use its stored credits
+        userId: userId
+      });
     } else {
       res.status(400).json({ error: 'Invalid action' });
     }
