@@ -11,6 +11,47 @@
     let userEmail = localStorage.getItem('navai_email');
     localStorage.setItem('navai_credits', userCredits);
 
+    function showMessagePopup(title, message, isSuccess = true) {
+        const popup = document.createElement('div');
+        popup.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; align-items: center;
+            justify-content: center; z-index: 10001;
+        `;
+        
+        popup.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; position: relative; text-align: center;">
+                <button id="closeMsgPopup" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
+                
+                <div style="font-size: 48px; margin-bottom: 15px;">${isSuccess ? '🎉' : '⚠️'}</div>
+                <h3 style="margin: 0 0 15px 0; color: #333;">${title}</h3>
+                <p style="margin: 0 0 20px 0; color: #666; line-height: 1.5;">${message}</p>
+                
+                <button id="okMsgBtn" style="padding: 10px 30px; background: #00bfff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">
+                    OK
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(popup);
+
+        // Close buttons
+        qs('#closeMsgPopup').addEventListener('click', () => {
+            document.body.removeChild(popup);
+        });
+
+        qs('#okMsgBtn').addEventListener('click', () => {
+            document.body.removeChild(popup);
+        });
+
+        // Close popup when clicking outside
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) {
+                document.body.removeChild(popup);
+            }
+        });
+    }
+
     function showSignupPopup() {
         const popup = document.createElement('div');
         popup.style.cssText = `
@@ -51,7 +92,7 @@
             const password = qs('#signupPassword').value.trim();
             
             if (!email || !password) {
-                alert('Please enter email and password');
+                showMessagePopup('Missing Information', 'Please enter both email and password', false);
                 return;
             }
 
@@ -67,7 +108,7 @@
             document.body.removeChild(popup);
             updateCreditDisplay();
             updateAuthUI();
-            alert('Welcome! You have 10 free credits to start with!');
+            showMessagePopup('Welcome! 🎉', 'You have 10 free credits to start generating amazing AI images!');
         });
 
         // Login handler - FRONTEND ONLY
@@ -76,7 +117,7 @@
             const password = qs('#signupPassword').value.trim();
             
             if (!email || !password) {
-                alert('Please enter email and password');
+                showMessagePopup('Missing Information', 'Please enter both email and password', false);
                 return;
             }
 
@@ -92,7 +133,7 @@
             document.body.removeChild(popup);
             updateCreditDisplay();
             updateAuthUI();
-            alert('Welcome back! You have ' + userCredits + ' credits');
+            showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
         });
 
         // Close popup when clicking outside
@@ -142,7 +183,7 @@
             const password = qs('#loginPassword').value.trim();
             
             if (!email || !password) {
-                alert('Please enter email and password');
+                showMessagePopup('Missing Information', 'Please enter both email and password', false);
                 return;
             }
 
@@ -158,7 +199,7 @@
             document.body.removeChild(popup);
             updateCreditDisplay();
             updateAuthUI();
-            alert('Welcome back! You have ' + userCredits + ' credits');
+            showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
         });
 
         // Switch to signup
@@ -175,6 +216,52 @@
         });
     }
 
+    function showAccountMenu() {
+        const menu = document.createElement('div');
+        menu.style.cssText = `
+            position: fixed; top: 60px; right: 20px; background: white; 
+            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10002; min-width: 200px; border: 1px solid #eee;
+        `;
+        
+        menu.innerHTML = `
+            <div style="padding: 15px; border-bottom: 1px solid #eee;">
+                <div style="font-weight: 600; color: #333;">${userEmail}</div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">${userCredits} credits</div>
+            </div>
+            <div style="padding: 10px 0;">
+                <button id="logoutBtn" style="width: 100%; text-align: left; padding: 10px 15px; background: none; border: none; cursor: pointer; color: #666; font-size: 14px;">
+                    🚪 Log Out
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(menu);
+
+        // Close menu when clicking outside
+        const closeMenu = (e) => {
+            if (!menu.contains(e.target) && e.target.className !== 'auth-button') {
+                document.body.removeChild(menu);
+                document.removeEventListener('click', closeMenu);
+            }
+        };
+
+        setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+        }, 100);
+
+        // Logout handler
+        qs('#logoutBtn').addEventListener('click', () => {
+            currentUserId = null;
+            userEmail = null;
+            localStorage.removeItem('navai_userId');
+            localStorage.removeItem('navai_email');
+            document.body.removeChild(menu);
+            updateAuthUI();
+            showMessagePopup('Logged Out', 'You have been successfully logged out.');
+        });
+    }
+
     function updateAuthUI() {
         let authButton = document.querySelector('.auth-button');
         if (!authButton) {
@@ -186,10 +273,10 @@
         }
 
         if (currentUserId) {
-            authButton.textContent = '👤 ' + (userEmail || 'Account');
-            authButton.onclick = () => {
-                alert(`Logged in as: ${userEmail}\nCredits: ${userCredits}\nUser ID: ${currentUserId}`);
-            };
+            // Shorten email if too long
+            const displayEmail = userEmail && userEmail.length > 15 ? userEmail.substring(0, 15) + '...' : userEmail;
+            authButton.textContent = '👤 ' + (displayEmail || 'Account');
+            authButton.onclick = showAccountMenu;
         } else {
             authButton.textContent = '👤 Sign In';
             authButton.onclick = showLoginPopup;
@@ -215,9 +302,6 @@
         updateAuthUI(); // Show auth button on ALL pages
         updateCreditDisplay(); // Show credits only on generate page
     }
-
-    // ... REST OF YOUR EXISTING CODE (initGenerate, initStripeCheckout, etc.) ...
-    // KEEP ALL YOUR EXISTING FUNCTIONS THE SAME
 
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
@@ -248,14 +332,14 @@
             }
 
             if (userCredits <= 0) {
-                alert('🎨 Out of credits! Upgrade your plan.');
-                window.location.href = '/plans';
+                showMessagePopup('Out of Credits! 🎨', 'Upgrade your plan to continue generating amazing images.', false);
+                setTimeout(() => window.location.href = '/plans', 2000);
                 return;
             }
 
             const prompt = promptBox.value.trim();
             if (!prompt) {
-                alert('Please enter a prompt.');
+                showMessagePopup('Missing Prompt', 'Please enter a description for your image.', false);
                 promptBox.focus();
                 return;
             }
@@ -283,7 +367,7 @@
                 outputArea.appendChild(outputImage);
                 if (placeholderText) placeholderText.textContent = '';
             } catch (error) {
-                alert('Error: ' + error.message);
+                showMessagePopup('Generation Failed', error.message, false);
                 if (placeholderText) placeholderText.textContent = 'Failed to generate. Please try again.';
             }
             setLoading(false);
@@ -295,7 +379,7 @@
         if (!contactForm) return;
         contactForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            alert('Thank you for your message! We\'ll get back to you soon.');
+            showMessagePopup('Message Sent!', 'Thank you for your message! We\'ll get back to you soon.');
             contactForm.reset();
         });
     }
@@ -315,7 +399,6 @@
                 
                 console.log('BUTTON CLICKED!');
                 const plan = this.closest('.plan').getAttribute('data-plan');
-                alert('Button works! Plan: ' + plan);
                 fetch('/api/create-checkout', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -324,9 +407,9 @@
                 .then(r => r.json())
                 .then(data => {
                     if (data.url) window.location.href = data.url;
-                    else alert('No URL: ' + JSON.stringify(data));
+                    else showMessagePopup('Payment Error', 'Could not start payment process.', false);
                 })
-                .catch(err => alert('Error: ' + err.message));
+                .catch(err => showMessagePopup('Error', err.message, false));
             };
         });
     }
