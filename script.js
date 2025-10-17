@@ -1,4 +1,76 @@
 // NavAI - Fast & Smooth Navigation with Credit System
+
+// GLOBAL PAYMENT FUNCTIONS - must be outside IIFE to work with inline onclick
+function handlePlanClick(plan) {
+    console.log('Plan clicked:', plan);
+    
+    // Get currentUserId from localStorage directly since it's not in scope
+    const currentUserId = localStorage.getItem('navai_userId');
+    console.log('User ID from localStorage:', currentUserId);
+    
+    if (!currentUserId) {
+        // We need to show the signup popup, but it's inside the IIFE
+        // For now, just alert and we'll fix this properly
+        alert('Please log in first!');
+        return;
+    }
+    
+    fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ 
+            plan: plan, 
+            userId: currentUserId 
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert('Payment Error: ' + (data.error || 'Could not start payment process.'));
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        alert('Error: ' + err.message);
+    });
+}
+
+function handleOneTimeClick() {
+    console.log('One-time payment clicked');
+    
+    // Get currentUserId from localStorage directly
+    const currentUserId = localStorage.getItem('navai_userId');
+    console.log('User ID from localStorage:', currentUserId);
+    
+    if (!currentUserId) {
+        alert('Please log in first!');
+        return;
+    }
+    
+    fetch('/api/create-one-time-checkout', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ 
+            userId: currentUserId 
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert('Payment Error: ' + (data.error || 'Could not start payment process.'));
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        alert('Error: ' + err.message);
+    });
+}
+
+// Rest of your existing IIFE code below...
 (() => {
     if (window._navaiScriptInitialized) return;
     window._navaiScriptInitialized = true;
@@ -89,70 +161,6 @@
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
         }
-    }
-
-    // PAYMENT BUTTON HANDLERS
-    function handlePlanClick(plan) {
-        console.log('Plan clicked:', plan);
-        
-        if (!currentUserId) {
-            showSignupPopup();
-            return;
-        }
-        
-        console.log('User ID:', currentUserId);
-        
-        fetch('/api/create-checkout', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                plan: plan, 
-                userId: currentUserId 
-            })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                showMessagePopup('Payment Error', data.error || 'Could not start payment process.', false);
-            }
-        })
-        .catch(err => {
-            console.error('Fetch error:', err);
-            showMessagePopup('Error', err.message, false);
-        });
-    }
-
-    function handleOneTimeClick() {
-        console.log('One-time payment clicked');
-        
-        if (!currentUserId) {
-            showSignupPopup();
-            return;
-        }
-        
-        console.log('User ID:', currentUserId);
-        
-        fetch('/api/create-one-time-checkout', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                userId: currentUserId 
-            })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                showMessagePopup('Payment Error', data.error || 'Could not start payment process.', false);
-            }
-        })
-        .catch(err => {
-            console.error('Fetch error:', err);
-            showMessagePopup('Error', err.message, false);
-        });
     }
 
     function showMessagePopup(title, message, isSuccess = true) {
