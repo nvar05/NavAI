@@ -154,3 +154,75 @@ async function handleOneTimeClick() {
 </script>
 </body>
 </html>
+
+<script>
+// GLOBAL PAYMENT FUNCTIONS
+function handlePlanClick(plan) {
+    console.log('Plan clicked:', plan);
+    
+    // Get currentUserId from localStorage directly
+    const currentUserId = localStorage.getItem('navai_userId');
+    console.log('User ID:', currentUserId);
+    
+    if (!currentUserId) {
+        alert('Please log in first!');
+        return;
+    }
+    
+    fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ 
+            plan: plan, 
+            userId: currentUserId 
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert('Payment Error: ' + (data.error || 'Could not start payment process.'));
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        alert('Error: ' + err.message);
+    });
+}
+
+function handleOneTimeClick() {
+    console.log('One-time payment clicked');
+    
+    const currentUserId = localStorage.getItem('navai_userId');
+    console.log('User ID:', currentUserId);
+    
+    if (!currentUserId) {
+        alert('Please log in first!');
+        return;
+    }
+    
+    fetch('/api/create-one-time-checkout', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ 
+            userId: currentUserId 
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert('Payment Error: ' + (data.error || 'Could not start payment process.'));
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        alert('Error: ' + err.message);
+    });
+}
+</script>
+
+</body>
+</html>
