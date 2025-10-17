@@ -1,5 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./users.db');
+const path = require('path');
+
+// Use absolute path for database
+const dbPath = path.join(process.cwd(), 'users.db');
+const db = new sqlite3.Database(dbPath);
 
 // Create users table
 db.serialize(() => {
@@ -13,21 +17,25 @@ db.serialize(() => {
 });
 
 module.exports = async (req, res) => {
+    // Set JSON header
+    res.setHeader('Content-Type', 'application/json');
+    
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        let body = '';
-        req.on('data', chunk => body += chunk);
-        await new Promise((resolve) => req.on('end', resolve));
-        
-        const { action, email, password } = JSON.parse(body);
+        const { action, email, password } = req.body;
+
+        if (!action || !email || !password) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
 
         if (action === 'signup') {
             // Check if user exists
             db.get('SELECT id FROM users WHERE email = ?', [email], (err, row) => {
                 if (err) {
+                    console.error('Database error:', err);
                     return res.status(500).json({ error: 'Database error' });
                 }
                 if (row) {
@@ -38,6 +46,7 @@ module.exports = async (req, res) => {
                 db.run('INSERT INTO users (email, password, credits) VALUES (?, ?, 10)', 
                       [email, password], function(err) {
                     if (err) {
+                        console.error('Insert error:', err);
                         return res.status(500).json({ error: 'Failed to create user' });
                     }
                     res.json({ 
@@ -53,6 +62,7 @@ module.exports = async (req, res) => {
             db.get('SELECT id, email, credits FROM users WHERE email = ? AND password = ?', 
                   [email, password], (err, row) => {
                 if (err) {
+                    console.error('Database error:', err);
                     return res.status(500).json({ error: 'Database error' });
                 }
                 if (row) {
@@ -72,6 +82,7 @@ module.exports = async (req, res) => {
         }
         
     } catch (error) {
-        res.status(500).json({ error: 'Server error' });
+        console.error('Auth error:', error);
+        res.status(500).json({ error: 'Server error: ' + error.message });
     }
 };

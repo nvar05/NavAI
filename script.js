@@ -211,12 +211,7 @@
             authButton.className = 'auth-button';
             authButton.style.cssText = 'position: fixed; top: 20px; right: 20px; background: rgba(0,191,255,0.9); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; z-index: 1000; font-size: 14px;';
             
-            const navbar = document.querySelector('.navbar');
-            if (navbar) {
-                navbar.appendChild(authButton);
-            } else {
-                document.body.appendChild(authButton);
-            }
+            document.body.appendChild(authButton);
         }
 
         if (currentUserId) {
@@ -230,15 +225,10 @@
         }
     }
 
-    function initPageLoad() {
-        document.body.style.opacity = '1';
-        if (window.location.pathname.includes('generate')) {
-            updateCreditDisplay();
-            updateAuthUI();
-        }
-    }
-
     function updateCreditDisplay() {
+        // Only show credits on generate page
+        if (!window.location.pathname.includes('generate')) return;
+        
         let creditDisplay = document.querySelector('.credit-display');
         if (!creditDisplay) {
             creditDisplay = document.createElement('div');
@@ -247,6 +237,12 @@
             document.body.appendChild(creditDisplay);
         }
         creditDisplay.textContent = `🎨 ${userCredits} credits`;
+    }
+
+    function initPageLoad() {
+        document.body.style.opacity = '1';
+        updateAuthUI(); // Show auth button on ALL pages
+        updateCreditDisplay(); // Show credits only on generate page
     }
 
     function initFAQ() {
