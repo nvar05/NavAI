@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - NavAI</title>
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+<header class="navbar">
+    <a href="index.html" class="logo">NavAI</a>
+</header>
+
+<section class="hero">
+    <h1>Verify Your Email</h1>
+    <div id="verification-status">
+        <p>Verifying your email...</p>
+    </div>
+</section>
+
+<script>
+async function verifyEmail() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const email = urlParams.get('email');
+    const token = urlParams.get('token');
+    
+    if (!email || !token) {
+        document.getElementById('verification-status').innerHTML = `
+            <p style="color: #ff6b6b;">Invalid verification link</p>
+            <a href="index.html" class="cta">Go Home</a>
+        `;
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/auth', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                action: 'verify-email', 
+                email: decodeURIComponent(email),
+                token: token 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('verification-status').innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">🎉</div>
+                    <h3>Email Verified Successfully!</h3>
+                    <p>Your email has been verified. You can now log in to your account.</p>
+                    <a href="index.html" class="cta">Start Generating</a>
+                </div>
+            `;
+        } else {
+            document.getElementById('verification-status').innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                    <h3>Verification Failed</h3>
+                    <p>${data.message || 'The verification link is invalid or has expired.'}</p>
+                    <a href="index.html" class="cta">Go Home</a>
+                </div>
+            `;
+        }
+    } catch (error) {
+        document.getElementById('verification-status').innerHTML = `
+            <p style="color: #ff6b6b;">Verification failed. Please try again.</p>
+            <a href="index.html" class="cta">Go Home</a>
+        `;
+    }
+}
+
+// Verify on page load
+verifyEmail();
+</script>
+</body>
+</html>
