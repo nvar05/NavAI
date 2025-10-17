@@ -12,12 +12,24 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Stripe not configured' });
     }
 
-    const { userId } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    // Parse request body for Vercel
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    await new Promise((resolve) => req.on('end', resolve));
+    
+    console.log('Raw body received (one-time):', body);
+    
+    const { userId } = JSON.parse(body);
+    
+    console.log('Parsed userId (one-time):', userId);
     
     if (!userId) {
+      console.log('No userId provided (one-time)');
       return res.status(400).json({ error: 'User not logged in' });
     }
 
+    console.log('Creating one-time Stripe session for userId:', userId);
+    
     const domain = 'https://www.nav-ai.co.uk';
     
     const session = await stripe.checkout.sessions.create({
@@ -37,9 +49,11 @@ module.exports = async (req, res) => {
       }
     });
 
+    console.log('One-time Stripe session created:', session.id);
     res.json({ url: session.url });
+    
   } catch (error) {
-    console.error('Stripe error:', error);
+    console.error('Stripe error (one-time):', error);
     res.status(500).json({ error: error.message });
   }
 };
