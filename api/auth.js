@@ -1,22 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-
-// Path to users JSON file
-const usersPath = path.join(process.cwd(), 'users.json');
-
-// Helper functions to read/write users
-function readUsers() {
-    try {
-        const data = fs.readFileSync(usersPath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        return [];
-    }
-}
-
-function writeUsers(users) {
-    fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
-}
+// In-memory user storage (resets on server restart, but works with Vercel)
+let users = [];
 
 module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
@@ -26,13 +9,15 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { action, email, password } = req.body;
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        await new Promise((resolve) => req.on('end', resolve));
+        
+        const { action, email, password } = JSON.parse(body);
 
         if (!action || !email || !password) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
-
-        const users = readUsers();
 
         if (action === 'signup') {
             // Check if user already exists
@@ -45,13 +30,13 @@ module.exports = async (req, res) => {
             const newUser = {
                 id: 'user_' + Date.now(),
                 email: email,
-                password: password, // In real app, hash this!
+                password: password,
                 credits: 10,
                 createdAt: new Date().toISOString()
             };
             
             users.push(newUser);
-            writeUsers(users);
+            console.log('New user signed up:', email);
             
             res.json({ 
                 success: true, 
@@ -64,6 +49,7 @@ module.exports = async (req, res) => {
             // Find user and check password
             const user = users.find(u => u.email === email && u.password === password);
             if (user) {
+                console.log('User logged in:', email);
                 res.json({ 
                     success: true, 
                     message: 'Login successful',
