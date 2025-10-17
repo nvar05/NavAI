@@ -19,188 +19,24 @@
         justify-content: center;
         gap: 30px;
         flex-wrap: wrap;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 20px;
+        position: relative;
     }
     
     .plan {
-        background: white;
-        border-radius: 12px;
-        padding: 30px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        flex: 1;
-        min-width: 280px;
-        max-width: 350px;
         position: relative;
-        border: 2px solid transparent;
-        transition: all 0.3s ease;
     }
     
-    .plan:hover {
-        border-color: #00bfff;
-        transform: translateY(-5px);
-    }
-    
-    .plan.popular {
-        border-color: #00bfff;
-        background: linear-gradient(135deg, #ffffff 0%, #f8fdff 100%);
-    }
-    
-    .popular-badge {
-        position: absolute;
-        top: -10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #00bfff;
-        color: white;
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    
-    .plan h3 {
-        margin: 0 0 20px 0;
-        color: #333;
-        font-size: 24px;
-        text-align: center;
-    }
-    
-    .plan-features {
-        margin-bottom: 25px;
-    }
-    
-    .image-count {
-        font-size: 18px;
-        font-weight: 600;
-        color: #333;
-        margin: 0 0 10px 0;
-    }
-    
-    .price {
-        font-size: 32px;
-        font-weight: 700;
-        color: #00bfff;
-        margin: 0 0 5px 0;
-    }
-    
-    .per-image {
-        color: #666;
-        margin: 0 0 10px 0;
-        font-size: 14px;
-    }
-    
-    .savings {
-        color: #28a745;
-        font-weight: 600;
-        margin: 0 0 10px 0;
-        font-size: 14px;
-    }
-    
-    .plan-desc {
-        color: #666;
-        margin: 15px 0 0 0;
-        font-style: italic;
-    }
-    
-    .plan-button {
-        width: 100%;
-        padding: 12px;
-        background: #00bfff;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.3s ease;
-    }
-    
-    .plan-button:hover {
-        background: #0099cc;
-    }
-    
-    .one-time-offer {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 12px;
-        padding: 30px;
-        margin: 40px auto;
-        max-width: 400px;
-        text-align: center;
-        color: white;
-        position: relative;
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-    }
-    
-    .offer-badge {
-        position: absolute;
-        top: -10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #ff6b6b;
-        color: white;
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    
-    .one-time-offer h3 {
-        margin: 0 0 15px 0;
-        font-size: 22px;
-    }
-    
-    .offer-text {
-        margin: 0 0 10px 0;
-        font-size: 16px;
-    }
-    
-    .highlight {
-        color: #ffd93d;
-        font-weight: 700;
-    }
-    
-    .offer-price {
-        font-size: 42px;
-        font-weight: 700;
-        margin: 0 0 10px 0;
-        color: #ffd93d;
-    }
-    
-    .offer-subtext {
-        margin: 0 0 20px 0;
-        font-size: 14px;
-        opacity: 0.9;
-    }
-    
-    .offer-button {
-        width: 100%;
-        padding: 12px;
-        background: #ffd93d;
-        color: #333;
-        border: none;
-        border-radius: 6px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .offer-button:hover {
-        background: #ffcd00;
-        transform: translateY(-2px);
-    }
-    
-    /* FIX: Ensure buttons are clickable */
+    /* NUCLEAR OPTION: Remove any potential blockers */
     body * {
         pointer-events: auto !important;
     }
     
+    /* But restore pointer-events for text elements */
     p, h1, h2, h3, h4, h5, h6, span, div:not(.plan):not(.plan-cards) {
         pointer-events: none !important;
     }
     
+    /* Force buttons to be clickable */
     button, .plan-button, .offer-button {
         pointer-events: auto !important;
     }
@@ -219,12 +55,10 @@
     </nav>
 </header>
 
-<section class="hero">
-    <h1>Choose Your Plan</h1>
-    <p>Select the perfect plan for your AI image generation needs</p>
-</section>
-
-<section class="plans-section">
+<section class="plans">
+    <h2>Choose Your Plan</h2>
+    <p class="plans-subtitle">Start with 10 free credits. No credit card required.</p>
+    
     <div class="plan-cards">
         <div class="plan" data-plan="basic">
             <h3>Basic</h3>
@@ -277,10 +111,52 @@
     <p>&copy; 2025 NavAI. All rights reserved.</p>
 </footer>
 
-<script src="script.js?v=3"></script>
+<script>
+// REAL STRIPE PAYMENTS - SIMPLE VERSION
+let clickLock = false;
+
+    } catch (error) {
+        alert('Payment system loading... Please try again in a moment.');
+    }
+    
+    setTimeout(() => {
+        clickLock = false;
+    }, 2000);
+}
+
+async function handleOneTimeClick() {
+    if (clickLock) return;
+    clickLock = true;
+    
+    try {
+        const response = await fetch('/api/create-one-time-checkout', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({})
+        });
+        
+        const data = await response.json();
+        
+        if (data.url) {
+            // Redirect to REAL Stripe checkout
+            window.location.href = data.url;
+        } else {
+            alert('Error: ' + (data.error || 'Please try again'));
+        }
+    } catch (error) {
+        alert('Payment system loading... Please try again in a moment.');
+    }
+    
+    setTimeout(() => {
+        clickLock = false;
+    }, 2000);
+}
+</script>
+</body>
+</html>
 
 <script>
-// Payment functions that work with the full auth system from script.js
+// Payment functions that work with the full auth system
 function handlePlanClick(plan) {
     console.log('Plan clicked:', plan);
     
@@ -288,7 +164,7 @@ function handlePlanClick(plan) {
     console.log('User ID:', currentUserId);
     
     if (!currentUserId) {
-        // Use the auth popup from script.js if available, otherwise fallback
+        // Use the auth popup from script.js
         if (typeof showSignupPopup === 'function') {
             showSignupPopup();
         } else {
@@ -354,18 +230,4 @@ function handleOneTimeClick() {
         alert('Error: ' + err.message);
     });
 }
-
-// Initialize auth UI when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // This will be handled by script.js, but we add a fallback
-    setTimeout(() => {
-        const authButton = document.querySelector('.auth-button');
-        if (!authButton && typeof updateAuthUI === 'function') {
-            updateAuthUI();
-        }
-    }, 100);
-});
 </script>
-
-</body>
-</html>
