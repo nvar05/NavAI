@@ -5,7 +5,7 @@ const db = new sqlite3.Database('./users.db');
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
+        email TEXT UNIQUE,
         password TEXT,
         credits INTEGER DEFAULT 10,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -22,21 +22,21 @@ module.exports = async (req, res) => {
         req.on('data', chunk => body += chunk);
         await new Promise((resolve) => req.on('end', resolve));
         
-        const { action, username, password } = JSON.parse(body);
+        const { action, email, password } = JSON.parse(body);
 
         if (action === 'signup') {
             // Check if user exists
-            db.get('SELECT id FROM users WHERE username = ?', [username], (err, row) => {
+            db.get('SELECT id FROM users WHERE email = ?', [email], (err, row) => {
                 if (err) {
                     return res.status(500).json({ error: 'Database error' });
                 }
                 if (row) {
-                    return res.json({ success: false, message: 'Username already exists' });
+                    return res.json({ success: false, message: 'Email already exists' });
                 }
                 
                 // Create new user with 10 free credits
-                db.run('INSERT INTO users (username, password, credits) VALUES (?, ?, 10)', 
-                      [username, password], function(err) {
+                db.run('INSERT INTO users (email, password, credits) VALUES (?, ?, 10)', 
+                      [email, password], function(err) {
                     if (err) {
                         return res.status(500).json({ error: 'Failed to create user' });
                     }
@@ -50,8 +50,8 @@ module.exports = async (req, res) => {
             });
             
         } else if (action === 'login') {
-            db.get('SELECT id, username, credits FROM users WHERE username = ? AND password = ?', 
-                  [username, password], (err, row) => {
+            db.get('SELECT id, email, credits FROM users WHERE email = ? AND password = ?', 
+                  [email, password], (err, row) => {
                 if (err) {
                     return res.status(500).json({ error: 'Database error' });
                 }
@@ -63,7 +63,7 @@ module.exports = async (req, res) => {
                         userId: row.id
                     });
                 } else {
-                    res.json({ success: false, message: 'Invalid credentials' });
+                    res.json({ success: false, message: 'Invalid email or password' });
                 }
             });
             
