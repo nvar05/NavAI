@@ -6,16 +6,25 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports = async (req, res) => {
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.setHeader('Content-Type', 'application/json');
     
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
         let body = '';
-        req.on('data', chunk => body += chunk);
-        await new Promise((resolve) => req.on('end', resolve));
+        for await (const chunk of req) {
+            body += chunk;
+        }
         
         const { userId } = JSON.parse(body);
         
@@ -39,16 +48,16 @@ module.exports = async (req, res) => {
                     quantity: 1,
                 },
             ],
-            success_url: `https://www.nav-ai.co.uk/success.html?session_id={CHECKOUT_SESSION_ID}`,
+            success_url: `https://www.nav-ai.co.uk/success.html?payment_success=true&plan=onetime&user_id=${userId}`,
             cancel_url: `https://www.nav-ai.co.uk/plans.html`,
-            client_reference_id: userId,
             metadata: {
                 userId: userId,
-                priceId: 'price_onetime'
+                plan: 'onetime'
             }
         });
 
-        res.json({ sessionId: session.id });
+        res.json({ url: session.url });
+        
     } catch (error) {
         console.error('One-time checkout error:', error);
         res.status(500).json({ error: error.message });
