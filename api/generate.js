@@ -40,8 +40,9 @@ module.exports = async (req, res) => {
 
     console.log('Calling Replicate API...');
 
+    // USE A SIMPLER, MORE RELIABLE MODEL
     const output = await replicate.run(
-      "bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
+      "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
       {
         input: {
           prompt: prompt,
@@ -52,32 +53,12 @@ module.exports = async (req, res) => {
       }
     );
     
-    console.log('Replicate output type:', typeof output);
+    console.log('Replicate output:', output);
     
-    // FIX: Handle function output - call the url() function if it exists
-    let imageUrl;
+    // This model returns a simple array of URLs
+    const imageUrl = output[0];
     
-    if (Array.isArray(output)) {
-      const firstItem = output[0];
-      if (typeof firstItem === 'function' && firstItem.name === 'url') {
-        imageUrl = firstItem(); // Call the function
-      } else if (typeof firstItem === 'string') {
-        imageUrl = firstItem;
-      }
-    } else if (output && typeof output === 'object') {
-      if (typeof output.url === 'function') {
-        imageUrl = output.url(); // Call the function
-      } else if (output.url) {
-        imageUrl = output.url;
-      }
-    }
-    
-    console.log('Final image URL:', imageUrl);
-    
-    if (!imageUrl) {
-      console.error('Could not extract image URL from:', output);
-      throw new Error('Could not get image URL from AI service');
-    }
+    console.log('Image URL:', imageUrl);
     
     res.json({ 
       success: true, 
