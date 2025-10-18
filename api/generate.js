@@ -40,9 +40,9 @@ module.exports = async (req, res) => {
 
     console.log('Calling Replicate API...');
 
-    // USE A SIMPLER, MORE RELIABLE MODEL
+    // Use a model that definitely returns URLs, not streams
     const output = await replicate.run(
-      "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+      "stability-ai/sdxl:7762fd07cf82c948538e41f63a46b0cb243f32c5fb44d091c19e8e48d2f6ba77",
       {
         input: {
           prompt: prompt,
@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
     
     console.log('Replicate output:', output);
     
-    // This model returns a simple array of URLs
+    // SDXL returns direct URLs
     const imageUrl = output[0];
     
     console.log('Image URL:', imageUrl);
