@@ -52,38 +52,32 @@ module.exports = async (req, res) => {
       }
     );
     
-    console.log('=== REPLICATE OUTPUT DEBUG ===');
-    console.log('Output type:', typeof output);
-    console.log('Is array:', Array.isArray(output));
-    console.log('Output keys:', Object.keys(output || {}));
-    console.log('Full output:', JSON.stringify(output, null, 2));
-    console.log('=== END DEBUG ===');
+    console.log('Replicate output type:', typeof output);
     
-    // BETTER EXTRACTION - handle nested objects
+    // FIX: Handle function output - call the url() function if it exists
     let imageUrl;
     
     if (Array.isArray(output)) {
-      // If it's an array, take first element
       const firstItem = output[0];
-      if (typeof firstItem === 'string') {
+      if (typeof firstItem === 'function' && firstItem.name === 'url') {
+        imageUrl = firstItem(); // Call the function
+      } else if (typeof firstItem === 'string') {
         imageUrl = firstItem;
-      } else if (firstItem && firstItem.url) {
-        imageUrl = firstItem.url;
       }
     } else if (output && typeof output === 'object') {
-      // If it's an object, look for common URL properties
-      if (output.url) imageUrl = output.url;
-      else if (output.output) imageUrl = output.output;
-      else if (output.image) imageUrl = output.image;
-      else if (output.data && output.data.url) imageUrl = output.data.url;
+      if (typeof output.url === 'function') {
+        imageUrl = output.url(); // Call the function
+      } else if (output.url) {
+        imageUrl = output.url;
+      }
     }
+    
+    console.log('Final image URL:', imageUrl);
     
     if (!imageUrl) {
       console.error('Could not extract image URL from:', output);
       throw new Error('Could not get image URL from AI service');
     }
-    
-    console.log('Extracted image URL:', imageUrl);
     
     res.json({ 
       success: true, 
