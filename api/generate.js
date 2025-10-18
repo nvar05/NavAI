@@ -40,9 +40,10 @@ module.exports = async (req, res) => {
 
     console.log('Calling Replicate API...');
 
-    // TRY JUST THE MODEL ID (without the owner/name part)
+    // TRY DIFFERENT FORMATS:
+    // Option 1: Without the long hash
     const output = await replicate.run(
-      "6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
+      "bytedance/sdxl-lightning-4step",
       {
         input: {
           prompt: prompt,
