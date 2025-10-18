@@ -40,7 +40,6 @@ module.exports = async (req, res) => {
 
     console.log('Calling Replicate API...');
 
-    // USE THE EXACT FORMAT YOU PROVIDED
     const output = await replicate.run(
       "bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
       {
@@ -53,12 +52,27 @@ module.exports = async (req, res) => {
       }
     );
     
-    console.log('Replicate output:', output);
-    console.log('Image URL:', output[0]);
+    console.log('Replicate output type:', typeof output);
+    console.log('Replicate output:', JSON.stringify(output, null, 2));
+    
+    // FIX: Handle the output properly - it might be an object or array
+    let imageUrl;
+    if (Array.isArray(output) && output.length > 0) {
+      imageUrl = output[0];
+    } else if (output && output.url) {
+      imageUrl = output.url;
+    } else if (typeof output === 'string') {
+      imageUrl = output;
+    } else {
+      console.error('Unexpected output format:', output);
+      throw new Error('Unexpected response from AI service');
+    }
+    
+    console.log('Final image URL:', imageUrl);
     
     res.json({ 
       success: true, 
-      imageUrl: output[0],
+      imageUrl: imageUrl,
       creditsRemaining: user.credits - 1
     });
 
