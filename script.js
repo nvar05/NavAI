@@ -436,7 +436,7 @@ function handleOneTimeClick() {
         });
     }
 
-    // GENERATE BUTTON FUNCTIONALITY - SIMPLE VERSION
+    // GENERATE BUTTON FUNCTIONALITY - FIXED VERSION
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
         const promptBox = qs('#prompt-box');
@@ -483,11 +483,67 @@ function handleOneTimeClick() {
 
             setLoading(true);
             
-            // SIMPLE FALLBACK - Just show a message that generation is temporarily disabled
-            setTimeout(() => {
-                showMessagePopup('Feature Coming Soon', 'AI image generation is being upgraded. Check back soon!', true);
+            try {
+                // Call your generate API
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        userId: currentUserId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Generation failed');
+                }
+
+                if (data.success && data.imageUrl) {
+                    // Remove placeholder text
+                    if (placeholderText) {
+                        placeholderText.style.display = 'none';
+                    }
+                    
+                    // Create and display the image
+                    const img = document.createElement('img');
+                    img.id = 'output-image';
+                    img.src = data.imageUrl;
+                    img.alt = 'Generated image: ' + prompt;
+                    img.style.cssText = `
+                        max-width: 100%;
+                        max-height: 500px;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    `;
+                    
+                    outputArea.appendChild(img);
+                    
+                    // Update credits display
+                    userCredits = data.creditsRemaining;
+                    localStorage.setItem('navai_credits', userCredits);
+                    updateCreditDisplay();
+                    
+                    showMessagePopup('Success! 🎉', `Image generated! You have ${data.creditsRemaining} credits remaining.`);
+                } else {
+                    throw new Error('No image URL received');
+                }
+                
+            } catch (error) {
+                console.error('Generation error:', error);
+                showMessagePopup('Generation Failed', error.message || 'Failed to generate image. Please try again.', false);
+                
+                // Show placeholder again
+                if (placeholderText) {
+                    placeholderText.style.display = 'block';
+                    placeholderText.textContent = 'Your generated image will appear here';
+                }
+            } finally {
                 setLoading(false);
-            }, 1500);
+            }
         });
     }
 
