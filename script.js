@@ -265,7 +265,7 @@ function handleOneTimeClick() {
             <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; position: relative;">
                 <button id="closePopup" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
                 
-                <h2 style="margin: 0 0 15px 0; color: '333;">Login to Your Account</h2>
+                <h2 style="margin: 0 0 15px 0; color: #333;">Login to Your Account</h2>
                 
                 <input type="email" id="loginEmail" placeholder="Email address" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
                 <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
@@ -436,7 +436,7 @@ function handleOneTimeClick() {
         });
     }
 
-    // GENERATE BUTTON FUNCTIONALITY - WITH DEBUG
+    // GENERATE BUTTON FUNCTIONALITY - SIMPLE VERSION
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
         const promptBox = qs('#prompt-box');
@@ -451,7 +451,6 @@ function handleOneTimeClick() {
                 generateBtn.textContent = 'Generating...';
                 outputArea.classList.add('loading');
                 if (placeholderText) placeholderText.textContent = 'Generating your image...';
-                // Clear previous images
                 const existingImages = outputArea.querySelectorAll('#output-image');
                 existingImages.forEach(img => img.remove());
             } else {
@@ -483,72 +482,12 @@ function handleOneTimeClick() {
             }
 
             setLoading(true);
-            try {
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        prompt: prompt,
-                        userId: currentUserId
-                    })
-                });
-
-                // DEBUG: See what the server actually returns
-                const responseText = await response.text();
-                console.log('RAW SERVER RESPONSE:', responseText);
-
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (e) {
-                    // If it's not JSON, show the actual error
-                    console.error('Failed to parse JSON. Raw response:', responseText);
-                    throw new Error('Server error: ' + responseText.substring(0, 200));
-                }
-
-                if (!response.ok) throw new Error(data.error || 'Generation failed');
-                
-                if (!data.imageUrl) {
-                    throw new Error('No image URL received from server');
-                }
-
-                console.log('Generated image URL:', data.imageUrl);
-                
-                // Update credits
-                userCredits = data.creditsRemaining;
-                updateUserCredits(currentUserId, userCredits);
-                localStorage.setItem('navai_credits', userCredits);
-                updateCreditDisplay();
-                
-                // Create and load the image properly
-                const outputImage = document.createElement('img');
-                outputImage.id = 'output-image';
-                outputImage.style.cssText = 'max-width: 100%; max-height: 500px; border-radius: 12px; margin-top: 20px; display: block; object-fit: contain;';
-                outputImage.alt = `Generated: ${prompt}`;
-                
-                // Wait for image to load before showing it
-                outputImage.onload = function() {
-                    if (placeholderText) placeholderText.style.display = 'none';
-                    outputArea.appendChild(outputImage);
-                    setLoading(false);
-                };
-                
-                outputImage.onerror = function() {
-                    throw new Error('Failed to load generated image');
-                };
-                
-                // Set src AFTER setting up event handlers
-                outputImage.src = data.imageUrl;
-                
-            } catch (error) {
-                console.error('Generation error:', error);
-                showMessagePopup('Generation Failed', error.message, false);
-                if (placeholderText) {
-                    placeholderText.textContent = 'Failed to generate. Please try again.';
-                    placeholderText.style.display = 'block';
-                }
+            
+            // SIMPLE FALLBACK - Just show a message that generation is temporarily disabled
+            setTimeout(() => {
+                showMessagePopup('Feature Coming Soon', 'AI image generation is being upgraded. Check back soon!', true);
                 setLoading(false);
-            }
+            }, 1500);
         });
     }
 
