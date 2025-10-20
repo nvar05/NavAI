@@ -6,7 +6,6 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -41,8 +40,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
-    // Call Replicate API directly using fetch
-    const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
+    // Call Replicate API using the correct endpoint
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
@@ -53,21 +52,35 @@ export default async function handler(req, res) {
         input: {
           prompt: prompt,
           width: 1024,
-          height: 1024,
-          num_outputs: 1
+          height: 1024
         }
       })
     });
 
-    if (!replicateResponse.ok) {
-      throw new Error('Replicate API request failed');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Replicate API failed');
     }
 
-    const prediction = await replicateResponse.json();
+    const prediction = await response.json();
     
-    if (!prediction.urls || !prediction.urls.get) {
-      throw new Error('Invalid response from Replicate');
+    // Wait for prediction to complete
+    let result = prediction;
+    while (result.status !== 'succeeded' && result.status !== 'failed') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const statusResponse = await fetch(result.urls.get, {
+        headers: {
+          'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+        },
+      });
+      result = await statusResponse.json();
     }
+
+    if (result.status === 'failed') {
+      throw new Error('Image generation failed');
+    }
+
+    const imageUrl = result.output[0];
 
     // Update credits
     await supabase
@@ -77,7 +90,7 @@ export default async function handler(req, res) {
 
     res.json({
       success: true,
-      imageUrl: prediction.urls.get,
+      imageUrl: imageUrl,
       creditsRemaining: user.credits - 1
     });
 
