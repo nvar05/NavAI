@@ -436,7 +436,7 @@ function handleOneTimeClick() {
         });
     }
 
-    // GENERATE BUTTON FUNCTIONALITY
+    // GENERATE BUTTON FUNCTIONALITY - FIXED VERSION
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
         const promptBox = qs('#prompt-box');
@@ -447,11 +447,16 @@ function handleOneTimeClick() {
 
         function setLoading(loading) {
             if (loading) {
+                generateBtn.disabled = true;
+                generateBtn.textContent = 'Generating...';
                 outputArea.classList.add('loading');
                 if (placeholderText) placeholderText.textContent = 'Generating your image...';
+                // Clear previous images
                 const existingImages = outputArea.querySelectorAll('#output-image');
                 existingImages.forEach(img => img.remove());
             } else {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Image';
                 outputArea.classList.remove('loading');
             }
         }
@@ -466,7 +471,7 @@ function handleOneTimeClick() {
 
             if (userCredits <= 0) {
                 showMessagePopup('Out of Credits! 🎨', 'Upgrade your plan to continue generating amazing images.', false);
-                setTimeout(() => window.location.href = '/plans', 2000);
+                setTimeout(() => window.location.href = 'plans.html', 2000);
                 return;
             }
 
@@ -491,23 +496,47 @@ function handleOneTimeClick() {
                 
                 if (!response.ok) throw new Error(data.error || 'Generation failed');
                 
-                userCredits--;
+                if (!data.imageUrl) {
+                    throw new Error('No image URL received from server');
+                }
+
+                console.log('Generated image URL:', data.imageUrl);
+                
+                // Update credits
+                userCredits = data.creditsRemaining;
                 updateUserCredits(currentUserId, userCredits);
                 localStorage.setItem('navai_credits', userCredits);
                 updateCreditDisplay();
                 
+                // Create and load the image properly
                 const outputImage = document.createElement('img');
                 outputImage.id = 'output-image';
-                outputImage.style.cssText = 'max-width: 100%; border-radius: 12px; margin-top: 20px; display: block;';
-                outputImage.src = data.imageUrl;
+                outputImage.style.cssText = 'max-width: 100%; max-height: 500px; border-radius: 12px; margin-top: 20px; display: block; object-fit: contain;';
                 outputImage.alt = `Generated: ${prompt}`;
-                outputArea.appendChild(outputImage);
-                if (placeholderText) placeholderText.textContent = '';
+                
+                // Wait for image to load before showing it
+                outputImage.onload = function() {
+                    if (placeholderText) placeholderText.style.display = 'none';
+                    outputArea.appendChild(outputImage);
+                    setLoading(false);
+                };
+                
+                outputImage.onerror = function() {
+                    throw new Error('Failed to load generated image');
+                };
+                
+                // Set src AFTER setting up event handlers
+                outputImage.src = data.imageUrl;
+                
             } catch (error) {
+                console.error('Generation error:', error);
                 showMessagePopup('Generation Failed', error.message, false);
-                if (placeholderText) placeholderText.textContent = 'Failed to generate. Please try again.';
+                if (placeholderText) {
+                    placeholderText.textContent = 'Failed to generate. Please try again.';
+                    placeholderText.style.display = 'block';
+                }
+                setLoading(false);
             }
-            setLoading(false);
         });
     }
 
