@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const fetch = require('node-fetch');
 
 module.exports = async (req, res) => {
   // Set CORS headers
@@ -21,7 +22,7 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Missing prompt or user ID' });
     }
 
-    console.log('Starting image generation for user:', userId, 'Prompt:', prompt);
+    console.log('Starting image generation for user:', userId);
 
     // Initialize Supabase
     const supabase = createClient(
@@ -45,7 +46,9 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
-    // Call Replicate API directly with fetch
+    console.log('Calling Replicate API...');
+
+    // Call Replicate API
     const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -74,8 +77,12 @@ module.exports = async (req, res) => {
 
     // Poll for completion
     let result = prediction;
-    while (result.status !== 'succeeded' && result.status !== 'failed') {
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+    let attempts = 0;
+    const maxAttempts = 30;
+
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
         headers: {
@@ -88,11 +95,15 @@ module.exports = async (req, res) => {
       }
       
       result = await statusResponse.json();
-      console.log('Prediction status:', result.status);
+      console.log(`Attempt ${attempts}: Status: ${result.status}`);
     }
 
     if (result.status === 'failed') {
       throw new Error('Image generation failed on Replicate');
+    }
+
+    if (attempts >= maxAttempts) {
+      throw new Error('Image generation timed out');
     }
 
     const imageUrl = result.output && result.output[0];
@@ -123,4 +134,4 @@ module.exports = async (req, res) => {
     console.error('Generation failed:', error);
     res.status(500).json({ error: error.message });
   }
-}
+};
