@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
       .eq('id', userId);
 
     const output = await replicate.run(
-      "stability-ai/sdxl:7762fd07cf82c948538e41f63a46b0cb243f32c5fb44d091c19e8e48d2f6ba77",
+      "bytedance/sdxl-lightning-4step", // default latest version
       {
         input: {
           prompt: prompt,
@@ -51,9 +51,9 @@ module.exports = async (req, res) => {
         }
       }
     );
-    
+
     const imageUrl = output[0];
-    
+
     res.json({ 
       success: true, 
       imageUrl: imageUrl,
