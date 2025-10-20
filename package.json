@@ -1,10 +1,10 @@
 {
   "name": "nvar-imagegen",
   "version": "1.0.0",
-  "description": "NavAI Image Generation - Static Site",
+  "description": "NavAI Image Generation",
   "scripts": {
-    "build": "echo 'Static site - no build needed'",
-    "dev": "echo 'Static site - use live deployment'"
+    "dev": "npx vercel dev",
+    "build": "echo 'No build step needed for static site'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.75.1",
