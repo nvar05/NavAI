@@ -8,8 +8,5 @@
     "@supabase/supabase-js": "^2.38.0",
     "replicate": "^0.23.0",
     "stripe": "^13.3.0"
-  },
-  "devDependencies": {
-    "next": "^15.5.6"
   }
 }
