@@ -6,7 +6,6 @@ const supabase = createClient(
 );
 
 module.exports = async (req, res) => {
-  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -26,8 +25,6 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Missing prompt or user ID' });
     }
 
-    console.log('Starting generation for user:', userId);
-
     // Check user credits
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -42,8 +39,6 @@ module.exports = async (req, res) => {
     if (user.credits < 1) {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
-
-    console.log('Calling Replicate API...');
 
     // Call Replicate API
     const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
@@ -68,15 +63,10 @@ module.exports = async (req, res) => {
     }
 
     const prediction = await replicateResponse.json();
-    console.log('Prediction started:', prediction.id);
 
     // Poll for completion
     let result = prediction;
-    let attempts = 0;
-    const maxAttempts = 30;
-
-    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
-      attempts++;
+    while (result.status !== 'succeeded' && result.status !== 'failed') {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
@@ -86,7 +76,6 @@ module.exports = async (req, res) => {
       });
       
       result = await statusResponse.json();
-      console.log(`Attempt ${attempts}: Status - ${result.status}`);
     }
 
     if (result.status === 'failed') {
@@ -98,15 +87,12 @@ module.exports = async (req, res) => {
       throw new Error('No image URL received');
     }
 
-    console.log('Image generated:', imageUrl);
-
     // Update user credits
     await supabase
       .from('users')
       .update({ credits: user.credits - 1 })
       .eq('id', userId);
 
-    // Return success
     res.json({
       success: true,
       imageUrl: imageUrl,
