@@ -11,7 +11,6 @@ const replicate = new Replicate({
 });
 
 module.exports = async (req, res) => {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -31,7 +30,6 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Missing prompt or user ID' });
     }
 
-    // Check user credits
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('credits')
@@ -46,23 +44,20 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
-    // Use the correct Replicate model syntax
     const output = await replicate.run(
-      "bytedance/sdxl-lightning-4step",
+      "bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
       {
         input: {
           prompt: prompt,
           width: 1024,
-          height: 1024
+          height: 1024,
+          num_outputs: 1
         }
       }
     );
 
-    if (!output || !output[0]) {
-      throw new Error('No image generated');
-    }
+    const imageUrl = output[0];
 
-    // Update credits
     await supabase
       .from('users')
       .update({ credits: user.credits - 1 })
@@ -70,12 +65,12 @@ module.exports = async (req, res) => {
 
     res.json({
       success: true,
-      imageUrl: output[0],
+      imageUrl: imageUrl,
       creditsRemaining: user.credits - 1
     });
 
   } catch (error) {
-    console.error('Generation error:', error);
+    console.error('Generation failed:', error);
     res.status(500).json({ error: error.message });
   }
 };
