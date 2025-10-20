@@ -265,7 +265,7 @@ function handleOneTimeClick() {
             <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; position: relative;">
                 <button id="closePopup" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
                 
-                <h2 style="margin: 0 0 15px 0; color: #333;">Login to Your Account</h2>
+                <h2 style="margin: 0 0 15px 0; color: '333;">Login to Your Account</h2>
                 
                 <input type="email" id="loginEmail" placeholder="Email address" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
                 <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
@@ -436,7 +436,7 @@ function handleOneTimeClick() {
         });
     }
 
-    // GENERATE BUTTON FUNCTIONALITY - FIXED VERSION
+    // GENERATE BUTTON FUNCTIONALITY - WITH DEBUG
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
         const promptBox = qs('#prompt-box');
@@ -492,8 +492,20 @@ function handleOneTimeClick() {
                         userId: currentUserId
                     })
                 });
-                const data = await response.json();
-                
+
+                // DEBUG: See what the server actually returns
+                const responseText = await response.text();
+                console.log('RAW SERVER RESPONSE:', responseText);
+
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    // If it's not JSON, show the actual error
+                    console.error('Failed to parse JSON. Raw response:', responseText);
+                    throw new Error('Server error: ' + responseText.substring(0, 200));
+                }
+
                 if (!response.ok) throw new Error(data.error || 'Generation failed');
                 
                 if (!data.imageUrl) {
