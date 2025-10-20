@@ -1,8 +1,4 @@
 {
   "name": "nvar-imagegen",
-  "version": "1.0.0",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.38.0",
-    "node-fetch": "^2.6.7"
-  }
+  "version": "1.0.0"
 }
