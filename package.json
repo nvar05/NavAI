@@ -6,12 +6,3 @@
     "stripe": "^13.3.0"
   }
 }
-EOFcat > package.json << 'EOF'
-{
-  "name": "nvar-imagegen",
-  "version": "1.0.0",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.38.0",
-    "stripe": "^13.3.0"
-  }
-}

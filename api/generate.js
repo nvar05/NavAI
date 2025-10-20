@@ -1,18 +1,16 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// Initialize Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
 module.exports = async (req, res) => {
-  // Set CORS headers for Vercel
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
-  // Handle preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -24,12 +22,8 @@ module.exports = async (req, res) => {
   try {
     const { prompt, userId } = req.body;
 
-    if (!prompt) {
-      return res.status(400).json({ error: 'Missing prompt' });
-    }
-
-    if (!userId) {
-      return res.status(400).json({ error: 'Missing user ID' });
+    if (!prompt || !userId) {
+      return res.status(400).json({ error: 'Missing prompt or user ID' });
     }
 
     console.log('Starting generation for user:', userId);
@@ -42,7 +36,6 @@ module.exports = async (req, res) => {
       .single();
 
     if (userError || !user) {
-      console.error('User error:', userError);
       return res.status(400).json({ error: 'User not found' });
     }
 
@@ -52,7 +45,7 @@ module.exports = async (req, res) => {
 
     console.log('Calling Replicate API...');
 
-    // Call Replicate API directly using fetch (available in Vercel Serverless)
+    // Call Replicate API
     const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -71,8 +64,6 @@ module.exports = async (req, res) => {
     });
 
     if (!replicateResponse.ok) {
-      const errorText = await replicateResponse.text();
-      console.error('Replicate API error:', errorText);
       throw new Error(`Replicate API failed: ${replicateResponse.status}`);
     }
 
@@ -82,11 +73,11 @@ module.exports = async (req, res) => {
     // Poll for completion
     let result = prediction;
     let attempts = 0;
-    const maxAttempts = 60; // 2 minutes max
+    const maxAttempts = 30;
 
     while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
       attempts++;
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
         headers: {
@@ -94,38 +85,26 @@ module.exports = async (req, res) => {
         },
       });
       
-      if (!statusResponse.ok) {
-        throw new Error('Failed to check prediction status');
-      }
-      
       result = await statusResponse.json();
       console.log(`Attempt ${attempts}: Status - ${result.status}`);
     }
 
     if (result.status === 'failed') {
-      throw new Error('Image generation failed on Replicate');
-    }
-
-    if (attempts >= maxAttempts) {
-      throw new Error('Image generation timed out');
+      throw new Error('Image generation failed');
     }
 
     const imageUrl = result.output && result.output[0];
     if (!imageUrl) {
-      throw new Error('No image URL received from Replicate');
+      throw new Error('No image URL received');
     }
 
     console.log('Image generated:', imageUrl);
 
     // Update user credits
-    const { error: updateError } = await supabase
+    await supabase
       .from('users')
       .update({ credits: user.credits - 1 })
       .eq('id', userId);
-
-    if (updateError) {
-      console.error('Failed to update credits:', updateError);
-    }
 
     // Return success
     res.json({
