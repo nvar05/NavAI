@@ -1,16 +1,8 @@
-const { createClient } = require('@supabase/supabase-js');
-const Replicate = require('replicate');
+import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
-
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
-
-module.exports = async (req, res) => {
+// Use fetch instead of replicate package to avoid compatibility issues
+export default async function handler(req, res) {
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -30,6 +22,13 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Missing prompt or user ID' });
     }
 
+    // Initialize Supabase
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY
+    );
+
+    // Check user credits
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('credits')
@@ -44,25 +43,72 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
-    const output = await replicate.run(
-      "bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
-      {
+    console.log('Starting image generation for user:', userId);
+
+    // Call Replicate API directly with fetch
+    const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: '6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe',
         input: {
           prompt: prompt,
           width: 1024,
           height: 1024,
           num_outputs: 1
         }
+      })
+    });
+
+    if (!replicateResponse.ok) {
+      const errorText = await replicateResponse.text();
+      console.error('Replicate API error:', errorText);
+      throw new Error(`Replicate API failed: ${replicateResponse.status}`);
+    }
+
+    const prediction = await replicateResponse.json();
+    console.log('Prediction created:', prediction.id);
+
+    // Poll for completion
+    let result = prediction;
+    while (result.status !== 'succeeded' && result.status !== 'failed') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
+        headers: {
+          'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+        },
+      });
+      
+      if (!statusResponse.ok) {
+        throw new Error('Failed to check prediction status');
       }
-    );
+      
+      result = await statusResponse.json();
+      console.log('Prediction status:', result.status);
+    }
 
-    const imageUrl = output[0];
+    if (result.status === 'failed') {
+      throw new Error('Image generation failed');
+    }
 
-    await supabase
+    const imageUrl = result.output[0];
+    console.log('Generated image URL:', imageUrl);
+
+    // Update user credits
+    const { error: updateError } = await supabase
       .from('users')
       .update({ credits: user.credits - 1 })
       .eq('id', userId);
 
+    if (updateError) {
+      console.error('Failed to update credits:', updateError);
+    }
+
+    // Return success response
     res.json({
       success: true,
       imageUrl: imageUrl,
@@ -73,4 +119,4 @@ module.exports = async (req, res) => {
     console.error('Generation failed:', error);
     res.status(500).json({ error: error.message });
   }
-};
+}
