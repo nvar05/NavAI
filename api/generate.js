@@ -1,11 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
 const Replicate = require('replicate');
 
+// Initialize Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
+// Initialize Replicate
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
@@ -17,11 +19,12 @@ module.exports = async (req, res) => {
 
   try {
     const { prompt, userId } = req.body;
-    
+
     if (!prompt || !userId) {
       return res.status(400).json({ error: 'Missing prompt or user ID' });
     }
 
+    // Fetch user from Supabase
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('credits')
@@ -31,17 +34,20 @@ module.exports = async (req, res) => {
     if (userError || !user) {
       return res.status(400).json({ error: 'User not found' });
     }
+
     if (user.credits < 1) {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
+    // Deduct 1 credit
     await supabase
       .from('users')
       .update({ credits: user.credits - 1 })
       .eq('id', userId);
 
+    // Generate image with Replicate using the correct model version
     const output = await replicate.run(
-      "bytedance/sdxl-lightning-4step", // default latest version
+      "bytedance/sdxl-lightning-4step:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
       {
         input: {
           prompt: prompt,
@@ -54,8 +60,9 @@ module.exports = async (req, res) => {
 
     const imageUrl = output[0];
 
-    res.json({ 
-      success: true, 
+    // Return success response
+    res.json({
+      success: true,
       imageUrl: imageUrl,
       creditsRemaining: user.credits - 1
     });
