@@ -1,11 +1,17 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
+const Replicate = require('replicate');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-export default async function handler(req, res) {
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
+});
+
+module.exports = async (req, res) => {
+  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -40,47 +46,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
-    // Call Replicate API using the correct endpoint
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        version: '6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe',
+    // Use the correct Replicate model syntax
+    const output = await replicate.run(
+      "bytedance/sdxl-lightning-4step",
+      {
         input: {
           prompt: prompt,
           width: 1024,
           height: 1024
         }
-      })
-    });
+      }
+    );
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Replicate API failed');
+    if (!output || !output[0]) {
+      throw new Error('No image generated');
     }
-
-    const prediction = await response.json();
-    
-    // Wait for prediction to complete
-    let result = prediction;
-    while (result.status !== 'succeeded' && result.status !== 'failed') {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const statusResponse = await fetch(result.urls.get, {
-        headers: {
-          'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
-        },
-      });
-      result = await statusResponse.json();
-    }
-
-    if (result.status === 'failed') {
-      throw new Error('Image generation failed');
-    }
-
-    const imageUrl = result.output[0];
 
     // Update credits
     await supabase
@@ -90,7 +70,7 @@ export default async function handler(req, res) {
 
     res.json({
       success: true,
-      imageUrl: imageUrl,
+      imageUrl: output[0],
       creditsRemaining: user.credits - 1
     });
 
@@ -98,4 +78,4 @@ export default async function handler(req, res) {
     console.error('Generation error:', error);
     res.status(500).json({ error: error.message });
   }
-}
+};
