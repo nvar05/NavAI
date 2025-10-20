@@ -1,15 +1,12 @@
 {
   "name": "nvar-imagegen",
   "version": "1.0.0",
-  "description": "NavAI Image Generation",
+  "type": "module",
   "scripts": {
-    "dev": "npx vercel dev",
-    "build": "echo 'No build step needed for static site'"
+    "dev": "echo 'Use Vercel dev'"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.75.1",
-    "replicate": "^1.3.0",
-    "stripe": "^19.1.0"
+    "@supabase/supabase-js": "^2.38.0"
   },
   "engines": {
     "node": "22.x"
