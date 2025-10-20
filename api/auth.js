@@ -1,11 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -21,10 +21,6 @@ export default async function handler(req, res) {
   try {
     const { action, email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
-    }
-
     if (action === 'signup') {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -32,63 +28,59 @@ export default async function handler(req, res) {
       });
 
       if (error) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ success: false, message: error.message });
       }
 
-      // Create user record with initial credits
+      // Create user record in users table
       const { error: dbError } = await supabase
         .from('users')
-        .insert([
-          { 
-            id: data.user.id, 
-            email: email,
-            credits: 10 
-          }
-        ]);
+        .insert([{ 
+          id: data.user.id, 
+          email: email,
+          credits: 10 
+        }]);
 
       if (dbError) {
-        return res.status(400).json({ error: dbError.message });
+        console.error('Database error:', dbError);
       }
 
-      res.json({ 
+      return res.json({ 
         success: true, 
-        userId: data.user.id, 
-        credits: 10 
+        userId: data.user.id,
+        credits: 10
       });
-
-    } else if (action === 'login') {
+    } 
+    else if (action === 'login') {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ success: false, message: error.message });
       }
 
       // Get user credits
-      const { data: user, error: userError } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('credits')
         .eq('id', data.user.id)
         .single();
 
       if (userError) {
-        return res.status(400).json({ error: userError.message });
+        console.error('Credit fetch error:', userError);
       }
 
-      res.json({ 
+      return res.json({ 
         success: true, 
-        userId: data.user.id, 
-        credits: user.credits 
+        userId: data.user.id,
+        credits: userData?.credits || 10
       });
-
     } else {
-      res.status(400).json({ error: 'Invalid action' });
+      return res.status(400).json({ success: false, message: 'Invalid action' });
     }
-
   } catch (error) {
     console.error('Auth error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
-}
+};
