@@ -1,7 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
-// Use fetch instead of replicate package to avoid compatibility issues
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -22,6 +21,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing prompt or user ID' });
     }
 
+    console.log('Starting image generation for user:', userId, 'Prompt:', prompt);
+
     // Initialize Supabase
     const supabase = createClient(
       process.env.SUPABASE_URL,
@@ -36,14 +37,13 @@ export default async function handler(req, res) {
       .single();
 
     if (userError || !user) {
+      console.error('User not found:', userError);
       return res.status(400).json({ error: 'User not found' });
     }
 
     if (user.credits < 1) {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
-
-    console.log('Starting image generation for user:', userId);
 
     // Call Replicate API directly with fetch
     const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
     // Poll for completion
     let result = prediction;
     while (result.status !== 'succeeded' && result.status !== 'failed') {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
       
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
         headers: {
@@ -92,10 +92,14 @@ export default async function handler(req, res) {
     }
 
     if (result.status === 'failed') {
-      throw new Error('Image generation failed');
+      throw new Error('Image generation failed on Replicate');
     }
 
-    const imageUrl = result.output[0];
+    const imageUrl = result.output && result.output[0];
+    if (!imageUrl) {
+      throw new Error('No image URL received from Replicate');
+    }
+
     console.log('Generated image URL:', imageUrl);
 
     // Update user credits
