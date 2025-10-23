@@ -1,3 +1,10 @@
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
 module.exports = async (req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -29,6 +36,26 @@ module.exports = async (req, res) => {
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // ✅ NEW: Check if email is verified before generating
+    console.log('Checking email verification...');
+    const { data: authData, error: authError } = await supabase.auth.admin.getUserById(userId);
+    
+    if (authError) {
+      console.error('Auth verification error:', authError);
+      return res.status(400).json({ error: 'Authentication error' });
+    }
+    
+    if (!authData.user.email_confirmed_at) {
+      console.log('User email not verified');
+      return res.status(400).json({ error: 'Please verify your email address before generating images. Check your inbox for the verification link.' });
+    }
+
+    console.log('Email verified, proceeding with generation...');
 
     // Call Replicate API with detailed logging
     console.log('Calling Replicate API...');
