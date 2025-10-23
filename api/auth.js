@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
         email,
         password,
         options: {
-          emailRedirectTo: 'https://nav-ai.co.uk/verify.html'
+          emailRedirectTo: 'https://nav-ai.co.uk/verify.html' // EXACT URL, no wildcards
         }
       });
 
@@ -45,13 +45,17 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, message: error.message });
       }
 
-      console.log('Signup data:', data);
+      console.log('Signup response:', {
+        user: data.user?.id,
+        session: data.session ? 'exists' : 'none',
+        identities: data.user?.identities?.length || 0
+      });
 
-      // Check if email confirmation is required
+      // Check if user already exists (identities array empty)
       if (data.user && data.user.identities && data.user.identities.length === 0) {
         return res.status(400).json({ 
           success: false, 
-          message: 'User already exists. Please try logging in instead.' 
+          message: '❌ This email is already registered. Please try logging in instead.' 
         });
       }
 
@@ -73,12 +77,12 @@ module.exports = async (req, res) => {
         }
       }
 
-      // ALWAYS show verification message for new signups
+      // FORCE verification message - never show welcome for new signups
       return res.json({ 
         success: true, 
-        message: '📧 VERIFICATION REQUIRED: Check your email inbox (and spam folder) for the verification link! You must click the link to activate your account and get your 10 free credits.',
-        needsVerification: true,
-        userId: data.user?.id
+        message: '📧 VERIFICATION EMAIL SENT! Check your inbox (and spam folder) for the verification link. You MUST click the link to activate your account and get your 10 free credits.',
+        needsVerification: true
+        // Don't return userId - they can't use it until verified
       });
       
     } else if (action === 'login') {
@@ -103,13 +107,13 @@ module.exports = async (req, res) => {
         .single();
 
       if (userError || !userData) {
-        return res.status(400).json({ success: false, message: 'User not found. Please sign up first.' });
+        return res.status(400).json({ success: false, message: '❌ User not found. Please sign up first.' });
       }
 
       if (!userData.verified) {
         return res.status(400).json({ 
           success: false, 
-          message: '❌ EMAIL NOT VERIFIED: Please check your email and click the verification link first! You need to verify your email to get your 10 free credits and start generating images.' 
+          message: '❌ EMAIL NOT VERIFIED! Please check your email and click the verification link first. You need to verify your email to access your account.' 
         });
       }
 

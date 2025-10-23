@@ -106,17 +106,22 @@ document.getElementById('auth-form').addEventListener('submit', async function(e
     
     if (data.success) {
       if (data.needsVerification) {
+        // VERIFICATION REQUIRED - DO NOT set localStorage
         messageEl.style.background = '#2a2a4a';
         messageEl.style.color = '#00bfff';
         messageEl.textContent = data.message;
         messageEl.style.display = 'block';
+        // Clear form
+        document.getElementById('auth-form').reset();
       } else {
+        // LOGIN SUCCESS - set localStorage only for verified users
         messageEl.style.background = '#1a3a1a';
         messageEl.style.color = '#00ff00';
-        messageEl.textContent = 'Success! You can now generate images.';
+        messageEl.textContent = data.message || 'Success! You can now generate images.';
         messageEl.style.display = 'block';
         localStorage.setItem('navai_userId', data.userId);
         localStorage.setItem('navai_credits', data.credits);
+        localStorage.setItem('navai_email', email);
         setTimeout(() => {
           closeAuth();
           window.location.href = 'generate.html';
@@ -137,6 +142,6 @@ document.getElementById('auth-form').addEventListener('submit', async function(e
   }
 });
 </script>
-<script src="script.js?v=2"></script>
+<script src="script.js?v=4"></script>
 </body>
 </html>
