@@ -20,15 +20,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    
-    await new Promise((resolve) => {
-      req.on('end', resolve);
-    });
+    const { prompt, userId } = req.body;
 
-    const { prompt, userId } = JSON.parse(body);
-    
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
@@ -52,10 +45,9 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
-    // Use dynamic import for node-fetch
-    const fetch = (await import('node-fetch')).default;
+    console.log('Starting generation for user:', userId, 'Prompt:', prompt);
 
-    // USE THE CORRECT MODEL ID
+    // Use built-in fetch (available in Node.js 18+ on Vercel)
     const modelVersion = "stability-ai/sdxl:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe";
     
     const response = await fetch('https://api.replicate.com/v1/predictions', {
@@ -69,30 +61,40 @@ module.exports = async (req, res) => {
         input: { 
           prompt: prompt,
           width: 1024,
-          height: 1024
+          height: 1024,
+          num_outputs: 1
         }
       })
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || `API error: ${response.status}`);
+      const errorData = await response.text();
+      console.error('Replicate API error:', errorData);
+      throw new Error(`Replicate API failed: ${response.status}`);
     }
 
     const prediction = await response.json();
+    console.log('Prediction started:', prediction.id);
     
     let result;
     let attempts = 0;
-    const maxAttempts = 60;
+    const maxAttempts = 30; // 60 seconds max
     
     while (attempts < maxAttempts) {
-      const statusResponse = await fetch(prediction.urls.get, {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
           'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
         },
       });
       
+      if (!statusResponse.ok) {
+        throw new Error('Failed to check prediction status');
+      }
+      
       result = await statusResponse.json();
+      console.log(`Attempt ${attempts + 1}: Status - ${result.status}`);
       
       if (result.status === 'succeeded') {
         // Update user credits after successful generation
@@ -110,7 +112,6 @@ module.exports = async (req, res) => {
         throw new Error('AI generation failed: ' + (result.error || 'Unknown error'));
       }
       
-      await new Promise(resolve => setTimeout(resolve, 2000));
       attempts++;
     }
     
