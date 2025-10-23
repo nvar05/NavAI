@@ -22,13 +22,15 @@ module.exports = async (req, res) => {
 
     const { prompt, userId } = JSON.parse(body);
     
-    console.log('Generate request - Prompt:', prompt, 'User ID:', userId);
+    console.log('=== GENERATE REQUEST ===');
+    console.log('Prompt:', prompt);
+    console.log('User ID:', userId);
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    // Call Replicate API
+    // Call Replicate API with detailed logging
     console.log('Calling Replicate API...');
     
     const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
@@ -48,18 +50,32 @@ module.exports = async (req, res) => {
       })
     });
 
+    console.log('Replicate response status:', replicateResponse.status);
+
+    const responseText = await replicateResponse.text();
+    console.log('Replicate raw response:', responseText);
+
     if (!replicateResponse.ok) {
-      const errorText = await replicateResponse.text();
-      throw new Error(`Replicate API failed: ${replicateResponse.status}`);
+      console.error('Replicate API failed with status:', replicateResponse.status);
+      throw new Error(`Replicate API failed: ${replicateResponse.status} - ${responseText}`);
     }
 
-    const prediction = await replicateResponse.json();
+    let prediction;
+    try {
+      prediction = JSON.parse(responseText);
+      console.log('Parsed prediction:', JSON.stringify(prediction, null, 2));
+    } catch (parseError) {
+      console.error('Failed to parse Replicate response:', parseError);
+      throw new Error('Invalid JSON from Replicate API');
+    }
 
     if (!prediction.id) {
-      throw new Error('No prediction ID received');
+      console.error('NO PREDICTION ID FOUND IN RESPONSE');
+      console.error('Response keys:', Object.keys(prediction));
+      throw new Error('No prediction ID received. Replicate response: ' + JSON.stringify(prediction));
     }
 
-    console.log('Prediction started:', prediction.id);
+    console.log('Prediction ID received:', prediction.id);
     
     // Poll for completion
     let result = prediction;
@@ -70,6 +86,7 @@ module.exports = async (req, res) => {
       attempts++;
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      console.log(`Polling attempt ${attempts}/${maxAttempts}`);
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
           'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
@@ -77,13 +94,13 @@ module.exports = async (req, res) => {
       });
       
       result = await statusResponse.json();
+      console.log(`Poll result ${attempts}:`, result.status);
       
       if (result.status === 'succeeded') {
-        console.log('Generation succeeded!');
-        
-        // Return the EXACT format your frontend expects
+        console.log('=== GENERATION SUCCEEDED ===');
+        console.log('Output URL:', result.output[0]);
         return res.json({ 
-          imageUrl: result.output[0]  // Frontend expects just imageUrl, not nested in success object
+          imageUrl: result.output[0]
         });
       } else if (result.status === 'failed') {
         throw new Error('AI generation failed');
@@ -93,7 +110,8 @@ module.exports = async (req, res) => {
     throw new Error('Generation timeout');
 
   } catch (error) {
-    console.error('Generation error:', error);
+    console.error('=== GENERATION ERROR ===');
+    console.error(error);
     res.status(500).json({ 
       error: error.message || 'AI generation failed'
     });
