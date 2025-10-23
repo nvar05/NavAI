@@ -265,9 +265,6 @@ function handleOneTimeClick() {
                     showMessagePopup('Signup Failed', data.message, false);
                 }
             } catch (error) {
-if (error.name === 'AbortError') {
-showMessagePopup('Generation Timeout', 'Image generation is taking longer than expected. Please check your Replicate dashboard.', false);
-} else
                 showMessagePopup('Signup Error', 'Could not create account. Please try again.', false);
             }
         });
@@ -356,9 +353,6 @@ showMessagePopup('Generation Timeout', 'Image generation is taking longer than e
                     showMessagePopup('Login Failed', data.message, false);
                 }
             } catch (error) {
-if (error.name === 'AbortError') {
-showMessagePopup('Generation Timeout', 'Image generation is taking longer than expected. Please check your Replicate dashboard.', false);
-} else
                 showMessagePopup('Login Error', 'Could not log in. Please try again.', false);
             }
         });
@@ -519,15 +513,11 @@ showMessagePopup('Generation Timeout', 'Image generation is taking longer than e
             
             try {
                 // OLD WORKING VERSION - only sends { prompt } and expects { imageUrl }
-                const controller = new AbortController();
-const timeoutId = setTimeout(() => controller.abort(), 60000);
-const response = await fetch('/api/generate', {
-signal: controller.signal
+                const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ prompt }) // Only prompt, no userId
                 });
-clearTimeout(timeoutId);
                 
                 const data = await response.json();
                 
@@ -558,9 +548,6 @@ clearTimeout(timeoutId);
                 }
                 
             } catch (error) {
-if (error.name === 'AbortError') {
-showMessagePopup('Generation Timeout', 'Image generation is taking longer than expected. Please check your Replicate dashboard.', false);
-} else
                 console.error('Generation error:', error);
                 showMessagePopup('Generation Failed', error.message || 'Failed to generate image. Please try again.', false);
                 
