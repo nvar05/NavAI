@@ -450,7 +450,7 @@ function handleOneTimeClick() {
                 generateBtn.disabled = true;
                 generateBtn.textContent = 'Generating...';
                 outputArea.classList.add('loading');
-                if (placeholderText) placeholderText.textContent = 'Generating your image... (this may take 20-30 seconds)';
+                if (placeholderText) placeholderText.textContent = 'Generating your image...';
                 const existingImages = outputArea.querySelectorAll('#output-image');
                 existingImages.forEach(img => img.remove());
             } else {
