@@ -1,16 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
-const Replicate = require('replicate');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
-
 module.exports = async (req, res) => {
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -24,13 +20,24 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { prompt, userId } = req.body;
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    
+    await new Promise((resolve) => {
+      req.on('end', resolve);
+    });
 
-    if (!prompt || !userId) {
-      return res.status(400).json({ error: 'Missing prompt or user ID' });
+    const { prompt, userId } = JSON.parse(body);
+    
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    // Check user credits
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Check user credits first
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('credits')
@@ -45,35 +52,74 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
-    // Generate image
-    const output = await replicate.run(
-      "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-      {
-        input: {
+    // Use dynamic import for node-fetch
+    const fetch = (await import('node-fetch')).default;
+
+    // USE THE CORRECT MODEL ID
+    const modelVersion = "stability-ai/sdxl:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe";
+    
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: modelVersion,
+        input: { 
           prompt: prompt,
           width: 1024,
-          height: 1024,
-          num_outputs: 1
+          height: 1024
         }
-      }
-    );
-
-    const imageUrl = output[0];
-
-    // Update credits
-    await supabase
-      .from('users')
-      .update({ credits: user.credits - 1 })
-      .eq('id', userId);
-
-    res.json({
-      success: true,
-      imageUrl: imageUrl,
-      creditsRemaining: user.credits - 1
+      })
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || `API error: ${response.status}`);
+    }
+
+    const prediction = await response.json();
+    
+    let result;
+    let attempts = 0;
+    const maxAttempts = 60;
+    
+    while (attempts < maxAttempts) {
+      const statusResponse = await fetch(prediction.urls.get, {
+        headers: {
+          'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+        },
+      });
+      
+      result = await statusResponse.json();
+      
+      if (result.status === 'succeeded') {
+        // Update user credits after successful generation
+        await supabase
+          .from('users')
+          .update({ credits: user.credits - 1 })
+          .eq('id', userId);
+
+        return res.json({ 
+          success: true,
+          imageUrl: result.output[0],
+          creditsRemaining: user.credits - 1
+        });
+      } else if (result.status === 'failed') {
+        throw new Error('AI generation failed: ' + (result.error || 'Unknown error'));
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      attempts++;
+    }
+    
+    throw new Error('Generation timeout');
+
   } catch (error) {
-    console.error('Generation failed:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Generation error:', error);
+    res.status(500).json({ 
+      error: error.message || 'AI generation failed'
+    });
   }
 };
