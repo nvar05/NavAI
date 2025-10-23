@@ -189,3 +189,35 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="script.js?v=4"></script>
 </body>
 </html>
+
+// Handle email verification redirects
+function handleVerificationRedirect() {
+    const hash = window.location.hash.substring(1);
+    if (hash.includes('access_token')) {
+        console.log('Verification redirect detected on homepage');
+        
+        const params = new URLSearchParams(hash);
+        const access_token = params.get('access_token');
+        const type = params.get('type');
+        
+        if (access_token && type === 'signup') {
+            // Show verification in progress
+            showAuth('login'); // Show login modal since they're now verified
+            document.getElementById('auth-message').innerHTML = `
+                <div style="background: #2a2a4a; color: #00bfff; padding: 10px; border-radius: 5px;">
+                    <strong>✅ Email Verified!</strong><br>
+                    Your account has been activated with 10 free credits! You can now log in.
+                </div>
+            `;
+            document.getElementById('auth-message').style.display = 'block';
+            
+            // Clean the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+}
+
+// Call this when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    handleVerificationRedirect();
+});

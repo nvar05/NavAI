@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
         email,
         password,
         options: {
-          emailRedirectTo: 'https://nav-ai.co.uk/verify.html' // FIXED: Use verify.html
+          emailRedirectTo: 'https://nav-ai.co.uk/index.html' // TEMPORARY: Redirect to homepage
         }
       });
 
