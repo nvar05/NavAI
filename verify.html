@@ -19,55 +19,76 @@
 </section>
 
 <script>
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
 async function verifyEmail() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const email = urlParams.get('email');
-    const token = urlParams.get('token');
+    const urlParams = new URLSearchParams(window.location.hash.substring(1));
+    const access_token = urlParams.get('access_token');
+    const refresh_token = urlParams.get('refresh_token');
+    const type = urlParams.get('type');
     
-    if (!email || !token) {
+    console.log('Verification params:', { access_token, refresh_token, type });
+    
+    if (type !== 'email' || !access_token) {
         document.getElementById('verification-status').innerHTML = `
-            <p style="color: #ff6b6b;">Invalid verification link</p>
-            <a href="index.html" class="cta">Go Home</a>
+            <div style="text-align: center;">
+                <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                <h3>Invalid Verification Link</h3>
+                <p>The verification link is invalid or has expired.</p>
+                <a href="index.html" class="cta">Go Home</a>
+            </div>
         `;
         return;
     }
     
     try {
-        const response = await fetch('/api/auth', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                action: 'verify-email', 
-                email: decodeURIComponent(email),
-                token: token 
-            })
+        // Set the session using the access token from the verification link
+        const { data, error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token
         });
         
-        const data = await response.json();
+        if (error) {
+            throw new Error(error.message);
+        }
         
-        if (data.success) {
+        if (data.user) {
+            // Mark user as verified in the database
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({ verified: true })
+                .eq('id', data.user.id);
+            
+            if (updateError) {
+                console.error('Update error:', updateError);
+            }
+            
             document.getElementById('verification-status').innerHTML = `
                 <div style="text-align: center;">
                     <div style="font-size: 48px; margin-bottom: 20px;">🎉</div>
                     <h3>Email Verified Successfully!</h3>
-                    <p>Your email has been verified. You can now log in to your account.</p>
+                    <p>Your account has been activated and you've received 10 free credits!</p>
+                    <p>You can now log in and start generating AI images.</p>
                     <a href="index.html" class="cta">Start Generating</a>
                 </div>
             `;
         } else {
-            document.getElementById('verification-status').innerHTML = `
-                <div style="text-align: center;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
-                    <h3>Verification Failed</h3>
-                    <p>${data.message || 'The verification link is invalid or has expired.'}</p>
-                    <a href="index.html" class="cta">Go Home</a>
-                </div>
-            `;
+            throw new Error('User not found in session');
         }
     } catch (error) {
+        console.error('Verification error:', error);
         document.getElementById('verification-status').innerHTML = `
-            <p style="color: #ff6b6b;">Verification failed. Please try again.</p>
-            <a href="index.html" class="cta">Go Home</a>
+            <div style="text-align: center;">
+                <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                <h3>Verification Failed</h3>
+                <p>${error.message || 'The verification link is invalid or has expired.'}</p>
+                <a href="index.html" class="cta">Go Home</a>
+            </div>
         `;
     }
 }
