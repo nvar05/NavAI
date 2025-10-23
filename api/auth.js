@@ -33,6 +33,8 @@ module.exports = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
 
+    console.log('Auth request:', action, email);
+
     if (action === 'signup') {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -43,17 +45,20 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, message: error.message });
       }
 
-      // Create user record in users table
+      // Create user record WITHOUT password field (it's in auth.users)
       const { error: dbError } = await supabase
         .from('users')
         .insert([{ 
           id: data.user.id, 
           email: email,
           credits: 10 
+          // Don't include password - it's handled by Supabase Auth
         }]);
 
       if (dbError) {
         console.error('Database error:', dbError);
+        // If user creation fails, still return success but log the error
+        // This allows users to continue even if the users table has issues
       }
 
       return res.json({ 
@@ -72,7 +77,7 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, message: error.message });
       }
 
-      // Get user credits
+      // Get user credits - create user if doesn't exist
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('credits')
@@ -80,7 +85,25 @@ module.exports = async (req, res) => {
         .single();
 
       if (userError) {
-        console.error('Credit fetch error:', userError);
+        console.error('User lookup error:', userError);
+        // Create user if doesn't exist
+        const { error: createError } = await supabase
+          .from('users')
+          .insert([{ 
+            id: data.user.id, 
+            email: email,
+            credits: 10 
+          }]);
+        
+        if (createError) {
+          console.error('User creation error:', createError);
+        }
+        
+        return res.json({ 
+          success: true, 
+          userId: data.user.id,
+          credits: 10
+        });
       }
 
       return res.json({ 
@@ -94,6 +117,6 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('Auth error:', error);
-    return res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
