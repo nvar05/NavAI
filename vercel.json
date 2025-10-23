@@ -10,11 +10,11 @@
       "use": "@vercel/static"
     },
     {
-      "src": "style.css",
+      "src": "*.css",
       "use": "@vercel/static"
     },
     {
-      "src": "script.js",
+      "src": "*.js",
       "use": "@vercel/static"
     }
   ],
@@ -22,6 +22,13 @@
     {
       "src": "/api/(.*)",
       "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*\\.(css|js|html|json|txt|ico))",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "dest": "/$1"
     },
     {
       "src": "/(.*)",
