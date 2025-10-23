@@ -1,0 +1,25 @@
+<script>
+// Override any conflicting modal behavior
+document.addEventListener('DOMContentLoaded', function() {
+    // Force the modal to always show Sign Up first
+    const authModal = document.getElementById('auth-modal');
+    if (authModal) {
+        // Pre-set all the text to Sign Up mode
+        const title = document.getElementById('auth-title');
+        const submitBtn = document.getElementById('auth-submit-btn');
+        const switchBtn = document.getElementById('auth-switch-btn');
+        
+        if (title) title.textContent = 'Join NavAI - Get 10 Free Credits';
+        if (submitBtn) submitBtn.textContent = 'Sign Up & Get Credits';
+        if (switchBtn) switchBtn.textContent = 'Already have an account? Login';
+    }
+    
+    // Override the showAuth function to always start with signup
+    if (window.showAuth) {
+        const originalShowAuth = window.showAuth;
+        window.showAuth = function(mode = 'signup') {
+            originalShowAuth.call(this, mode);
+        };
+    }
+});
+</script>

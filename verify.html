@@ -5,66 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verify Email - NavAI</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            background: radial-gradient(circle at top, #0a0f1f, #050710);
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .navbar {
-            padding: 20px 60px;
-        }
-        .verification-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-        .verification-content {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 40px;
-            text-align: center;
-            max-width: 500px;
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .success { color: #00ff00; }
-        .error { color: #ff6b6b; }
-    </style>
 </head>
 <body>
 <header class="navbar">
     <a href="index.html" class="logo">NavAI</a>
 </header>
 
-<div class="verification-container">
-    <div class="verification-content">
+<section class="hero" style="min-height: 80vh; display: flex; align-items: center; justify-content: center;">
+    <div style="text-align: center; max-width: 500px;">
+        <h1>Email Verification</h1>
         <div id="verification-status">
-            <h2>Email Verification</h2>
-            <p>Processing your verification...</p>
+            <p>Verifying your email address...</p>
         </div>
     </div>
-</div>
+</section>
 
 <script>
 async function verifyEmail() {
-    console.log('Starting email verification...');
+    console.log('Starting verification...');
     
-    // Get tokens from URL hash
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const access_token = params.get('access_token');
-    const refresh_token = params.get('refresh_token');
     const type = params.get('type');
     
-    console.log('Verification type:', type);
-    
-    if (!access_token || (type !== 'signup' && type !== 'email')) {
-        showError('Invalid verification link. Please try signing up again.');
+    if (!access_token || type !== 'signup') {
+        document.getElementById('verification-status').innerHTML = `
+            <div style="color: #ff6b6b;">
+                <h3>Invalid verification link</h3>
+                <p>Please try signing up again.</p>
+                <a href="index.html" style="color: #00bfff;">Go to Homepage</a>
+            </div>
+        `;
         return;
     }
     
@@ -72,59 +44,50 @@ async function verifyEmail() {
         const response = await fetch('/api/verify-email', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                access_token: access_token,
-                refresh_token: refresh_token
-            })
+            body: JSON.stringify({ access_token })
         });
         
         const data = await response.json();
-        console.log('Verification response:', data);
         
         if (data.success) {
-            // Auto-login the user
+            document.getElementById('verification-status').innerHTML = `
+                <div style="color: #00ff00;">
+                    <h3>✅ Email Verified Successfully!</h3>
+                    <p>Your account has been activated with 10 free credits!</p>
+                    <p>Redirecting to generator...</p>
+                </div>
+            `;
+            
+            // Auto-login and redirect
             localStorage.setItem('navai_userId', data.userId);
-            localStorage.setItem('navai_credits', data.credits || 10);
+            localStorage.setItem('navai_credits', data.credits);
             localStorage.setItem('navai_email', data.email);
             
-            showSuccess('🎉 Email verified successfully! You have been automatically logged in with 10 free credits. Redirecting to generator...');
-            
-            // Redirect to generate page after success
             setTimeout(() => {
                 window.location.href = 'generate.html';
-            }, 3000);
+            }, 2000);
         } else {
-            showError(data.message || 'Verification failed. Please try again.');
+            document.getElementById('verification-status').innerHTML = `
+                <div style="color: #ff6b6b;">
+                    <h3>❌ Verification Failed</h3>
+                    <p>${data.message || 'Please try again.'}</p>
+                    <a href="index.html" style="color: #00bfff;">Go to Homepage</a>
+                </div>
+            `;
         }
     } catch (error) {
-        console.error('Verification error:', error);
-        showError('Network error during verification. Please try again.');
+        document.getElementById('verification-status').innerHTML = `
+            <div style="color: #ff6b6b;">
+                <h3>❌ Network Error</h3>
+                <p>Please check your connection and try again.</p>
+                <a href="index.html" style="color: #00bfff;">Go to Homepage</a>
+            </div>
+        `;
     }
 }
 
-function showSuccess(message) {
-    document.getElementById('verification-status').innerHTML = `
-        <div class="success">
-            <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
-            <h3>Success!</h3>
-            <p>${message}</p>
-        </div>
-    `;
-}
-
-function showError(message) {
-    document.getElementById('verification-status').innerHTML = `
-        <div class="error">
-            <div style="font-size: 64px; margin-bottom: 20px;">❌</div>
-            <h3>Verification Failed</h3>
-            <p>${message}</p>
-            <a href="index.html" style="color: #00bfff; margin-top: 20px; display: inline-block;">Go to Homepage</a>
-        </div>
-    `;
-}
-
-// Start verification when page loads
-document.addEventListener('DOMContentLoaded', verifyEmail);
+// Start verification
+verifyEmail();
 </script>
 </body>
 </html>
