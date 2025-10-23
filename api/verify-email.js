@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
 
     console.log('Email verification attempt');
 
-    // Set the session using the access token from the verification link
+    // Set the session using the access token
     const { data, error } = await supabase.auth.setSession({
       access_token,
       refresh_token

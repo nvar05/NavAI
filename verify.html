@@ -5,22 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verify Email - NavAI</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background: radial-gradient(circle at top, #0a0f1f, #050710);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar {
+            padding: 20px 60px;
+        }
+        .verification-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .verification-content {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff6b6b; }
+    </style>
 </head>
 <body>
 <header class="navbar">
     <a href="index.html" class="logo">NavAI</a>
 </header>
 
-<section class="hero" style="min-height: 60vh; padding: 100px 20px;">
-    <h1>Email Verification</h1>
-    <div id="verification-status">
-        <p>Processing verification...</p>
+<div class="verification-container">
+    <div class="verification-content">
+        <div id="verification-status">
+            <h2>Email Verification</h2>
+            <p>Processing your verification...</p>
+        </div>
     </div>
-</section>
+</div>
 
 <script>
 async function verifyEmail() {
-    console.log('Starting verification...');
+    console.log('Starting email verification...');
     
     // Get tokens from URL hash
     const hash = window.location.hash.substring(1);
@@ -29,9 +61,7 @@ async function verifyEmail() {
     const refresh_token = params.get('refresh_token');
     const type = params.get('type');
     
-    console.log('URL hash:', hash);
-    console.log('Token present:', !!access_token);
-    console.log('Type:', type);
+    console.log('Verification type:', type);
     
     if (!access_token || (type !== 'signup' && type !== 'email')) {
         showError('Invalid verification link. Please try signing up again.');
@@ -39,7 +69,6 @@ async function verifyEmail() {
     }
     
     try {
-        console.log('Calling verify API...');
         const response = await fetch('/api/verify-email', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -50,10 +79,20 @@ async function verifyEmail() {
         });
         
         const data = await response.json();
-        console.log('Verify API response:', data);
+        console.log('Verification response:', data);
         
         if (data.success) {
-            showSuccess('🎉 Email verified successfully! Your account is now active with 10 free credits. You can now log in and start generating images.');
+            // Auto-login the user
+            localStorage.setItem('navai_userId', data.userId);
+            localStorage.setItem('navai_credits', data.credits || 10);
+            localStorage.setItem('navai_email', data.email);
+            
+            showSuccess('🎉 Email verified successfully! You have been automatically logged in with 10 free credits. Redirecting to generator...');
+            
+            // Redirect to generate page after success
+            setTimeout(() => {
+                window.location.href = 'generate.html';
+            }, 3000);
         } else {
             showError(data.message || 'Verification failed. Please try again.');
         }
@@ -65,22 +104,21 @@ async function verifyEmail() {
 
 function showSuccess(message) {
     document.getElementById('verification-status').innerHTML = `
-        <div style="text-align: center; max-width: 500px; margin: 0 auto;">
+        <div class="success">
             <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
-            <h3 style="color: #00ff00; margin-bottom: 20px;">Success!</h3>
-            <p style="margin-bottom: 30px; font-size: 18px;">${message}</p>
-            <a href="index.html" class="cta" style="display: inline-block;">Go to Homepage</a>
+            <h3>Success!</h3>
+            <p>${message}</p>
         </div>
     `;
 }
 
 function showError(message) {
     document.getElementById('verification-status').innerHTML = `
-        <div style="text-align: center; max-width: 500px; margin: 0 auto;">
+        <div class="error">
             <div style="font-size: 64px; margin-bottom: 20px;">❌</div>
-            <h3 style="color: #ff6b6b; margin-bottom: 20px;">Verification Failed</h3>
-            <p style="margin-bottom: 30px; font-size: 18px;">${message}</p>
-            <a href="index.html" class="cta" style="display: inline-block;">Go to Homepage</a>
+            <h3>Verification Failed</h3>
+            <p>${message}</p>
+            <a href="index.html" style="color: #00bfff; margin-top: 20px; display: inline-block;">Go to Homepage</a>
         </div>
     `;
 }
