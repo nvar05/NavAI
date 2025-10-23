@@ -64,16 +64,32 @@
       "dest": "/api/verify-email.js"
     },
     {
+      "src": "/verify",
+      "dest": "/verify.html"
+    },
+    {
+      "src": "/generate",
+      "dest": "/generate.html"
+    },
+    {
       "src": "/plans",
       "dest": "/plans.html"
+    },
+    {
+      "src": "/about",
+      "dest": "/about.html"
+    },
+    {
+      "src": "/contact",
+      "dest": "/contact.html"
     },
     {
       "src": "/",
       "dest": "/index.html"
     },
     {
-      "src": "/(.*)",
-      "dest": "/$1.html"
+      "src": "/(.*\\.html)",
+      "dest": "/$1"
     }
   ]
 }
