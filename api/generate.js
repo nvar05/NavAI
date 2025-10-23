@@ -39,33 +39,49 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
-    // Check user credits
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('credits')
-      .eq('id', userId)
-      .single();
+    // Check user credits - handle case where user doesn't exist
+    let user;
+    let credits = 10; // Default credits
+    
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('credits')
+        .eq('id', userId)
+        .single();
 
-    console.log('User query result:', { user, userError });
-
-    if (userError) {
-      console.error('User query error:', userError);
-      return res.status(400).json({ error: 'Database error: ' + userError.message });
+      if (userError) {
+        console.log('User not found in database, creating user...');
+        // Create user with default credits
+        const { error: createError } = await supabase
+          .from('users')
+          .insert([{ 
+            id: userId, 
+            email: 'temp@user.com', // Temporary email
+            credits: 10 
+          }]);
+        
+        if (createError) {
+          console.error('Failed to create user:', createError);
+          // Continue with default credits even if creation fails
+        } else {
+          console.log('User created successfully');
+        }
+        user = { credits: 10 };
+      } else {
+        user = userData;
+      }
+    } catch (error) {
+      console.error('User lookup error:', error);
+      // Use default credits if lookup fails
+      user = { credits: 10 };
     }
 
-    if (!user) {
-      console.error('User not found in database. Available users:');
-      // List all users to debug
-      const { data: allUsers } = await supabase.from('users').select('id, email');
-      console.log('All users in database:', allUsers);
-      return res.status(400).json({ error: 'User not found in database' });
-    }
-
-    if (user.credits < 1) {
+    if (!user || user.credits < 1) {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
-    console.log('User found, proceeding with generation...');
+    console.log('User credits:', user.credits, 'Proceeding with generation...');
 
     // Use dynamic import for node-fetch
     const fetch = (await import('node-fetch')).default;
@@ -118,11 +134,16 @@ module.exports = async (req, res) => {
       console.log(`Attempt ${attempts + 1}: Status - ${result.status}`);
       
       if (result.status === 'succeeded') {
-        // Update user credits
-        await supabase
-          .from('users')
-          .update({ credits: user.credits - 1 })
-          .eq('id', userId);
+        // Update user credits if user exists
+        try {
+          await supabase
+            .from('users')
+            .update({ credits: user.credits - 1 })
+            .eq('id', userId);
+        } catch (updateError) {
+          console.error('Failed to update credits:', updateError);
+          // Continue even if credit update fails
+        }
 
         return res.json({ 
           success: true,
