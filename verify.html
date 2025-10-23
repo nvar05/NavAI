@@ -4,45 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verify Email - NavAI</title>
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="navbar">
     <a href="index.html" class="logo">NavAI</a>
 </header>
 
-<section class="hero">
-    <h1>Verify Your Email</h1>
+<section class="hero" style="min-height: 60vh; padding: 100px 20px;">
+    <h1>Email Verification</h1>
     <div id="verification-status">
-        <p>Verifying your email...</p>
+        <p>Processing verification...</p>
     </div>
 </section>
 
 <script>
 async function verifyEmail() {
-    // Get tokens from URL hash (Supabase puts them here)
+    console.log('Starting verification...');
+    
+    // Get tokens from URL hash
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const access_token = params.get('access_token');
     const refresh_token = params.get('refresh_token');
     const type = params.get('type');
     
-    console.log('Verification params:', { access_token, type });
+    console.log('URL hash:', hash);
+    console.log('Token present:', !!access_token);
+    console.log('Type:', type);
     
-    if (type !== 'signup' && type !== 'email') {
-        document.getElementById('verification-status').innerHTML = `
-            <div style="text-align: center;">
-                <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
-                <h3>Invalid Verification Link</h3>
-                <p>The verification link is invalid.</p>
-                <a href="index.html" class="cta">Go Home</a>
-            </div>
-        `;
+    if (!access_token || (type !== 'signup' && type !== 'email')) {
+        showError('Invalid verification link. Please try signing up again.');
         return;
     }
     
     try {
-        // Call our verify API
+        console.log('Calling verify API...');
         const response = await fetch('/api/verify-email', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -53,42 +50,43 @@ async function verifyEmail() {
         });
         
         const data = await response.json();
+        console.log('Verify API response:', data);
         
         if (data.success) {
-            document.getElementById('verification-status').innerHTML = `
-                <div style="text-align: center;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">🎉</div>
-                    <h3>Email Verified Successfully!</h3>
-                    <p>Your account has been activated and you've received 10 free credits!</p>
-                    <p>You can now log in and start generating AI images.</p>
-                    <a href="index.html" class="cta">Start Generating</a>
-                </div>
-            `;
+            showSuccess('🎉 Email verified successfully! Your account is now active with 10 free credits. You can now log in and start generating images.');
         } else {
-            document.getElementById('verification-status').innerHTML = `
-                <div style="text-align: center;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
-                    <h3>Verification Failed</h3>
-                    <p>${data.message || 'The verification link is invalid or has expired.'}</p>
-                    <a href="index.html" class="cta">Go Home</a>
-                </div>
-            `;
+            showError(data.message || 'Verification failed. Please try again.');
         }
     } catch (error) {
         console.error('Verification error:', error);
-        document.getElementById('verification-status').innerHTML = `
-            <div style="text-align: center;">
-                <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
-                <h3>Verification Failed</h3>
-                <p>Network error. Please try again.</p>
-                <a href="index.html" class="cta">Go Home</a>
-            </div>
-        `;
+        showError('Network error during verification. Please try again.');
     }
 }
 
-// Verify on page load
-verifyEmail();
+function showSuccess(message) {
+    document.getElementById('verification-status').innerHTML = `
+        <div style="text-align: center; max-width: 500px; margin: 0 auto;">
+            <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
+            <h3 style="color: #00ff00; margin-bottom: 20px;">Success!</h3>
+            <p style="margin-bottom: 30px; font-size: 18px;">${message}</p>
+            <a href="index.html" class="cta" style="display: inline-block;">Go to Homepage</a>
+        </div>
+    `;
+}
+
+function showError(message) {
+    document.getElementById('verification-status').innerHTML = `
+        <div style="text-align: center; max-width: 500px; margin: 0 auto;">
+            <div style="font-size: 64px; margin-bottom: 20px;">❌</div>
+            <h3 style="color: #ff6b6b; margin-bottom: 20px;">Verification Failed</h3>
+            <p style="margin-bottom: 30px; font-size: 18px;">${message}</p>
+            <a href="index.html" class="cta" style="display: inline-block;">Go to Homepage</a>
+        </div>
+    `;
+}
+
+// Start verification when page loads
+document.addEventListener('DOMContentLoaded', verifyEmail);
 </script>
 </body>
 </html>

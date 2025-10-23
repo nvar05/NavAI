@@ -45,7 +45,17 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, message: error.message });
       }
 
-      // Create user record immediately (don't wait for verification)
+      console.log('Signup data:', data);
+
+      // Check if email confirmation is required
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'User already exists. Please try logging in instead.' 
+        });
+      }
+
+      // Create user record immediately
       if (data.user) {
         const { error: dbError } = await supabase
           .from('users')
@@ -63,10 +73,12 @@ module.exports = async (req, res) => {
         }
       }
 
+      // ALWAYS show verification message for new signups
       return res.json({ 
         success: true, 
-        message: '📧 Verification email sent! Check your inbox (and spam folder) for the verification link. Click the link to activate your account and get 10 free credits!',
-        needsVerification: true
+        message: '📧 VERIFICATION REQUIRED: Check your email inbox (and spam folder) for the verification link! You must click the link to activate your account and get your 10 free credits.',
+        needsVerification: true,
+        userId: data.user?.id
       });
       
     } else if (action === 'login') {
@@ -90,33 +102,15 @@ module.exports = async (req, res) => {
         .eq('id', data.user.id)
         .single();
 
-      if (userError) {
-        console.error('User lookup error:', userError);
-        // Create user if doesn't exist (shouldn't happen but just in case)
-        const { error: createError } = await supabase
-          .from('users')
-          .upsert([{ 
-            id: data.user.id, 
-            email: email,
-            credits: 10,
-            verified: true // Assume verified if they can login
-          }], {
-            onConflict: 'id'
-          });
-        
-        if (createError) {
-          return res.status(400).json({ success: false, message: 'User account issue. Please contact support.' });
-        }
-        
-        return res.json({ 
-          success: true, 
-          userId: data.user.id,
-          credits: 10
-        });
+      if (userError || !userData) {
+        return res.status(400).json({ success: false, message: 'User not found. Please sign up first.' });
       }
 
       if (!userData.verified) {
-        return res.status(400).json({ success: false, message: '❌ Please verify your email first! Check your inbox for the verification link to get your 10 free credits.' });
+        return res.status(400).json({ 
+          success: false, 
+          message: '❌ EMAIL NOT VERIFIED: Please check your email and click the verification link first! You need to verify your email to get your 10 free credits and start generating images.' 
+        });
       }
 
       return res.json({ 
@@ -132,6 +126,6 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('Auth error:', error);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    return res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }
 };
