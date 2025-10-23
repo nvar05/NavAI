@@ -29,6 +29,8 @@ module.exports = async (req, res) => {
 
     const { prompt, userId } = JSON.parse(body);
     
+    console.log('Generate request - User ID:', userId, 'Prompt:', prompt);
+    
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
@@ -44,18 +46,31 @@ module.exports = async (req, res) => {
       .eq('id', userId)
       .single();
 
-    if (userError || !user) {
-      return res.status(400).json({ error: 'User not found' });
+    console.log('User query result:', { user, userError });
+
+    if (userError) {
+      console.error('User query error:', userError);
+      return res.status(400).json({ error: 'Database error: ' + userError.message });
+    }
+
+    if (!user) {
+      console.error('User not found in database. Available users:');
+      // List all users to debug
+      const { data: allUsers } = await supabase.from('users').select('id, email');
+      console.log('All users in database:', allUsers);
+      return res.status(400).json({ error: 'User not found in database' });
     }
 
     if (user.credits < 1) {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
+    console.log('User found, proceeding with generation...');
+
     // Use dynamic import for node-fetch
     const fetch = (await import('node-fetch')).default;
 
-    // USE THE CORRECT FAST MODEL
+    // Call Replicate API
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -75,22 +90,24 @@ module.exports = async (req, res) => {
 
     if (!response.ok) {
       const errorData = await response.text();
-      throw new Error(`API error: ${response.status} - ${errorData}`);
+      throw new Error(`Replicate API failed: ${response.status} - ${errorData}`);
     }
 
     const prediction = await response.json();
     
-    // Check if prediction ID exists
     if (!prediction.id) {
-      console.error('No prediction ID in response:', prediction);
       throw new Error('No prediction ID received from Replicate API');
     }
 
+    console.log('Prediction started:', prediction.id);
+    
     let result;
     let attempts = 0;
     const maxAttempts = 30;
     
     while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
           'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
@@ -98,6 +115,7 @@ module.exports = async (req, res) => {
       });
       
       result = await statusResponse.json();
+      console.log(`Attempt ${attempts + 1}: Status - ${result.status}`);
       
       if (result.status === 'succeeded') {
         // Update user credits
@@ -115,7 +133,6 @@ module.exports = async (req, res) => {
         throw new Error('AI generation failed: ' + (result.error || 'Unknown error'));
       }
       
-      await new Promise(resolve => setTimeout(resolve, 2000));
       attempts++;
     }
     
