@@ -44,7 +44,7 @@ module.exports = async (req, res) => {
         email,
         password,
         options: {
-          emailRedirectTo: `${process.env.YOUR_DOMAIN || 'https://nav-ai.co.uk'}/verify.html`
+          emailRedirectTo: 'https://nav-ai.co.uk/verify.html' // Fixed URL
         }
       });
 
