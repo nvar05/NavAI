@@ -19,27 +19,22 @@
 </section>
 
 <script>
-const { createClient } = require('@supabase/supabase-js');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
-
 async function verifyEmail() {
-    const urlParams = new URLSearchParams(window.location.hash.substring(1));
-    const access_token = urlParams.get('access_token');
-    const refresh_token = urlParams.get('refresh_token');
-    const type = urlParams.get('type');
+    // Get tokens from URL hash (Supabase puts them here)
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+    const type = params.get('type');
     
-    console.log('Verification params:', { access_token, refresh_token, type });
+    console.log('Verification params:', { access_token, type });
     
-    if (type !== 'email' || !access_token) {
+    if (type !== 'signup' && type !== 'email') {
         document.getElementById('verification-status').innerHTML = `
             <div style="text-align: center;">
                 <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
                 <h3>Invalid Verification Link</h3>
-                <p>The verification link is invalid or has expired.</p>
+                <p>The verification link is invalid.</p>
                 <a href="index.html" class="cta">Go Home</a>
             </div>
         `;
@@ -47,27 +42,19 @@ async function verifyEmail() {
     }
     
     try {
-        // Set the session using the access token from the verification link
-        const { data, error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token
+        // Call our verify API
+        const response = await fetch('/api/verify-email', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                access_token: access_token,
+                refresh_token: refresh_token
+            })
         });
         
-        if (error) {
-            throw new Error(error.message);
-        }
+        const data = await response.json();
         
-        if (data.user) {
-            // Mark user as verified in the database
-            const { error: updateError } = await supabase
-                .from('users')
-                .update({ verified: true })
-                .eq('id', data.user.id);
-            
-            if (updateError) {
-                console.error('Update error:', updateError);
-            }
-            
+        if (data.success) {
             document.getElementById('verification-status').innerHTML = `
                 <div style="text-align: center;">
                     <div style="font-size: 48px; margin-bottom: 20px;">🎉</div>
@@ -78,7 +65,14 @@ async function verifyEmail() {
                 </div>
             `;
         } else {
-            throw new Error('User not found in session');
+            document.getElementById('verification-status').innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                    <h3>Verification Failed</h3>
+                    <p>${data.message || 'The verification link is invalid or has expired.'}</p>
+                    <a href="index.html" class="cta">Go Home</a>
+                </div>
+            `;
         }
     } catch (error) {
         console.error('Verification error:', error);
@@ -86,7 +80,7 @@ async function verifyEmail() {
             <div style="text-align: center;">
                 <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
                 <h3>Verification Failed</h3>
-                <p>${error.message || 'The verification link is invalid or has expired.'}</p>
+                <p>Network error. Please try again.</p>
                 <a href="index.html" class="cta">Go Home</a>
             </div>
         `;

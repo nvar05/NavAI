@@ -6,17 +6,10 @@ const supabase = createClient(
 );
 
 module.exports = async (req, res) => {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
   
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
   try {
@@ -52,16 +45,18 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, message: error.message });
       }
 
-      // Create user record (will be used after email verification)
+      // Create user record immediately (don't wait for verification)
       if (data.user) {
         const { error: dbError } = await supabase
           .from('users')
-          .insert([{ 
+          .upsert([{ 
             id: data.user.id, 
             email: email,
             credits: 10,
             verified: false
-          }]);
+          }], {
+            onConflict: 'id'
+          });
 
         if (dbError) {
           console.error('Database error:', dbError);
@@ -88,15 +83,36 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, message: error.message });
       }
 
-      // Check if user is verified
+      // Check if user exists and is verified
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('credits, verified')
         .eq('id', data.user.id)
         .single();
 
-      if (userError || !userData) {
-        return res.status(400).json({ success: false, message: 'User not found' });
+      if (userError) {
+        console.error('User lookup error:', userError);
+        // Create user if doesn't exist (shouldn't happen but just in case)
+        const { error: createError } = await supabase
+          .from('users')
+          .upsert([{ 
+            id: data.user.id, 
+            email: email,
+            credits: 10,
+            verified: true // Assume verified if they can login
+          }], {
+            onConflict: 'id'
+          });
+        
+        if (createError) {
+          return res.status(400).json({ success: false, message: 'User account issue. Please contact support.' });
+        }
+        
+        return res.json({ 
+          success: true, 
+          userId: data.user.id,
+          credits: 10
+        });
       }
 
       if (!userData.verified) {
