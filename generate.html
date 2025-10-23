@@ -37,6 +37,18 @@
 <footer class="footer">
     <p>&copy; 2025 NavAI. All rights reserved.</p>
 </footer>
-<script src="script.js?v=3"></script>
+
+<script>
+// Check if user is logged in when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const userId = localStorage.getItem('navai_userId');
+    if (!userId) {
+        // Redirect to homepage with signup modal
+        window.location.href = 'index.html';
+        return;
+    }
+});
+</script>
+<script src="script.js?v=4"></script>
 </body>
 </html>
