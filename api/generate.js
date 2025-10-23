@@ -47,9 +47,7 @@ module.exports = async (req, res) => {
 
     console.log('Starting generation for user:', userId, 'Prompt:', prompt);
 
-    // Use built-in fetch (available in Node.js 18+ on Vercel)
-    const modelVersion = "stability-ai/sdxl:6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe";
-    
+    // Use the correct model identifier
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -57,7 +55,7 @@ module.exports = async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: modelVersion,
+        version: "6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
         input: { 
           prompt: prompt,
           width: 1024,
@@ -68,17 +66,23 @@ module.exports = async (req, res) => {
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Replicate API error:', errorData);
+      const errorText = await response.text();
+      console.error('Replicate API error:', errorText);
       throw new Error(`Replicate API failed: ${response.status}`);
     }
 
     const prediction = await response.json();
+    console.log('Full prediction response:', JSON.stringify(prediction, null, 2));
+
+    if (!prediction.id) {
+      throw new Error('No prediction ID received from Replicate API');
+    }
+
     console.log('Prediction started:', prediction.id);
     
     let result;
     let attempts = 0;
-    const maxAttempts = 30; // 60 seconds max
+    const maxAttempts = 30;
     
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -97,6 +101,10 @@ module.exports = async (req, res) => {
       console.log(`Attempt ${attempts + 1}: Status - ${result.status}`);
       
       if (result.status === 'succeeded') {
+        if (!result.output || !result.output[0]) {
+          throw new Error('No image URL in output');
+        }
+        
         // Update user credits after successful generation
         await supabase
           .from('users')
