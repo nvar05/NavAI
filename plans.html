@@ -5,42 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plans - NavAI</title>
     <link rel="stylesheet" href="style.css?v=2">
-    <style>
-    /* GUARANTEED BUTTON FIX */
-    .plan-button, .offer-button {
-        position: relative !important;
-        z-index: 100 !important;
-        cursor: pointer !important;
-    }
-    
-    /* FIX: Make sure plan cards don't block clicks */
-    .plan-cards {
-        display: flex;
-        justify-content: center;
-        gap: 30px;
-        flex-wrap: wrap;
-        position: relative;
-    }
-    
-    .plan {
-        position: relative;
-    }
-    
-    /* NUCLEAR OPTION: Remove any potential blockers */
-    body * {
-        pointer-events: auto !important;
-    }
-    
-    /* But restore pointer-events for text elements */
-    p, h1, h2, h3, h4, h5, h6, span, div:not(.plan):not(.plan-cards) {
-        pointer-events: none !important;
-    }
-    
-    /* Force buttons to be clickable */
-    button, .plan-button, .offer-button {
-        pointer-events: auto !important;
-    }
-    </style>
 </head>
 <body>
 <header class="navbar">
@@ -112,51 +76,6 @@
 </footer>
 
 <script>
-// REAL STRIPE PAYMENTS - SIMPLE VERSION
-let clickLock = false;
-
-    } catch (error) {
-        alert('Payment system loading... Please try again in a moment.');
-    }
-    
-    setTimeout(() => {
-        clickLock = false;
-    }, 2000);
-}
-
-async function handleOneTimeClick() {
-    if (clickLock) return;
-    clickLock = true;
-    
-    try {
-        const response = await fetch('/api/create-one-time-checkout', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({})
-        });
-        
-        const data = await response.json();
-        
-        if (data.url) {
-            // Redirect to REAL Stripe checkout
-            window.location.href = data.url;
-        } else {
-            alert('Error: ' + (data.error || 'Please try again'));
-        }
-    } catch (error) {
-        alert('Payment system loading... Please try again in a moment.');
-    }
-    
-    setTimeout(() => {
-        clickLock = false;
-    }, 2000);
-}
-</script>
-</body>
-</html>
-
-<script>
-// Payment functions that work with the full auth system
 function handlePlanClick(plan) {
     console.log('Plan clicked:', plan);
     
@@ -164,7 +83,6 @@ function handlePlanClick(plan) {
     console.log('User ID:', currentUserId);
     
     if (!currentUserId) {
-        // Use the auth popup from script.js
         if (typeof showSignupPopup === 'function') {
             showSignupPopup();
         } else {
@@ -231,3 +149,5 @@ function handleOneTimeClick() {
     });
 }
 </script>
+</body>
+</html>
