@@ -39,11 +39,12 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
-    // Check user credits - handle case where user doesn't exist
-    let user;
-    let credits = 10; // Default credits
-    
+    // PROPER USER CREDIT CHECK WITH CREATION
+    let userCredits = 10;
+    let userExists = false;
+
     try {
+      // First, try to get user credits
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('credits')
@@ -51,42 +52,50 @@ module.exports = async (req, res) => {
         .single();
 
       if (userError) {
-        console.log('User not found in database, creating user...');
-        // Create user with default credits
+        console.log('User not found, creating user...');
+        // User doesn't exist - create them with minimal required fields
         const { error: createError } = await supabase
           .from('users')
           .insert([{ 
-            id: userId, 
-            email: 'temp@user.com', // Temporary email
-            credits: 10 
+            id: userId,
+            email: `user-${userId}@temp.com`, // Required field
+            credits: 10,
+            created_at: new Date().toISOString() // Usually required
           }]);
         
         if (createError) {
           console.error('Failed to create user:', createError);
-          // Continue with default credits even if creation fails
+          // If creation fails, use default credits but don't block generation
+          userCredits = 10;
         } else {
           console.log('User created successfully');
+          userExists = true;
+          userCredits = 10;
         }
-        user = { credits: 10 };
       } else {
-        user = userData;
+        // User exists
+        userExists = true;
+        userCredits = userData.credits;
+        console.log('User found with credits:', userCredits);
       }
     } catch (error) {
-      console.error('User lookup error:', error);
-      // Use default credits if lookup fails
-      user = { credits: 10 };
+      console.error('User handling error:', error);
+      // Use default credits on error
+      userCredits = 10;
     }
 
-    if (!user || user.credits < 1) {
+    // CHECK CREDITS
+    if (userCredits < 1) {
       return res.status(400).json({ error: 'Insufficient credits' });
     }
 
-    console.log('User credits:', user.credits, 'Proceeding with generation...');
+    console.log('Proceeding with generation, user credits:', userCredits);
 
     // Use dynamic import for node-fetch
     const fetch = (await import('node-fetch')).default;
 
-    // Call Replicate API
+    // CALL REPLICATE API
+    console.log('Calling Replicate API...');
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -104,19 +113,25 @@ module.exports = async (req, res) => {
       })
     });
 
+    console.log('Replicate response status:', response.status);
+    
     if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`Replicate API failed: ${response.status} - ${errorData}`);
+      const errorText = await response.text();
+      console.error('Replicate API failed:', errorText);
+      throw new Error(`Replicate API failed: ${response.status}`);
     }
 
     const prediction = await response.json();
+    console.log('Prediction response:', prediction);
     
     if (!prediction.id) {
+      console.error('No prediction ID in response:', prediction);
       throw new Error('No prediction ID received from Replicate API');
     }
 
     console.log('Prediction started:', prediction.id);
     
+    // POLL FOR COMPLETION
     let result;
     let attempts = 0;
     const maxAttempts = 30;
@@ -124,31 +139,40 @@ module.exports = async (req, res) => {
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      console.log(`Checking prediction status - Attempt ${attempts + 1}`);
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
           'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
         },
       });
       
+      if (!statusResponse.ok) {
+        throw new Error('Failed to check prediction status');
+      }
+      
       result = await statusResponse.json();
-      console.log(`Attempt ${attempts + 1}: Status - ${result.status}`);
+      console.log(`Status ${attempts + 1}:`, result.status);
       
       if (result.status === 'succeeded') {
-        // Update user credits if user exists
-        try {
-          await supabase
-            .from('users')
-            .update({ credits: user.credits - 1 })
-            .eq('id', userId);
-        } catch (updateError) {
-          console.error('Failed to update credits:', updateError);
-          // Continue even if credit update fails
+        console.log('Generation succeeded! Output:', result.output);
+        
+        // DEDUCT CREDITS ONLY IF USER EXISTS
+        if (userExists) {
+          try {
+            await supabase
+              .from('users')
+              .update({ credits: userCredits - 1 })
+              .eq('id', userId);
+            console.log('Credits updated:', userCredits - 1);
+          } catch (updateError) {
+            console.error('Failed to update credits:', updateError);
+          }
         }
 
         return res.json({ 
           success: true,
           imageUrl: result.output[0],
-          creditsRemaining: user.credits - 1
+          creditsRemaining: userCredits - 1
         });
       } else if (result.status === 'failed') {
         throw new Error('AI generation failed: ' + (result.error || 'Unknown error'));
