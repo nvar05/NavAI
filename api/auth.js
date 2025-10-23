@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
         email,
         password,
         options: {
-          emailRedirectTo: 'https://nav-ai.co.uk/verify.html' // EXACT URL, no wildcards
+          emailRedirectTo: 'https://nav-ai.co.uk/generate.html' // Redirect straight to generate page!
         }
       });
 
@@ -82,12 +82,11 @@ module.exports = async (req, res) => {
         success: true, 
         message: '📧 VERIFICATION EMAIL SENT! Check your inbox (and spam folder) for the verification link. You MUST click the link to activate your account and get your 10 free credits.',
         needsVerification: true
-        // Don't return userId - they can't use it until verified
       });
       
     } else if (action === 'login') {
       if (!password) {
-        return res.status(400).json({ success: false, message: 'Password is required for login' });
+        return res.status(405).json({ success: false, message: 'Password is required for login' });
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({

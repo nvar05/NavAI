@@ -19,6 +19,8 @@ module.exports = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid verification link' });
     }
 
+    console.log('Email verification attempt');
+
     // Set the session using the access token from the verification link
     const { data, error } = await supabase.auth.setSession({
       access_token,
@@ -40,10 +42,19 @@ module.exports = async (req, res) => {
         console.error('Update error:', updateError);
       }
       
+      // Get user data to return for auto-login
+      const { data: userData } = await supabase
+        .from('users')
+        .select('credits, email')
+        .eq('id', data.user.id)
+        .single();
+      
       return res.json({ 
         success: true, 
-        message: 'Email verified successfully! You can now log in.',
-        userId: data.user.id
+        message: 'Email verified successfully!',
+        userId: data.user.id,
+        credits: userData?.credits || 10,
+        email: userData?.email || data.user.email
       });
     } else {
       return res.status(400).json({ success: false, message: 'User not found' });

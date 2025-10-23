@@ -39,14 +39,65 @@
 </footer>
 
 <script>
+// Handle automatic login from email verification
+async function handleVerificationRedirect() {
+    // Check if we have verification tokens in the URL
+    const hash = window.location.hash.substring(1);
+    if (hash.includes('access_token')) {
+        console.log('Verification redirect detected');
+        
+        try {
+            const params = new URLSearchParams(hash);
+            const access_token = params.get('access_token');
+            const refresh_token = params.get('refresh_token');
+            
+            // Call verify API to mark user as verified and get user info
+            const response = await fetch('/api/verify-email', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    access_token: access_token,
+                    refresh_token: refresh_token
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Auto-login the user
+                localStorage.setItem('navai_userId', data.userId);
+                localStorage.setItem('navai_credits', data.credits || 10);
+                localStorage.setItem('navai_email', data.email);
+                
+                // Show success message
+                alert('🎉 Email verified successfully! You are now logged in with 10 free credits.');
+                
+                // Clean URL - remove the hash
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                alert('❌ Verification failed: ' + data.message);
+                window.location.href = 'index.html';
+            }
+        } catch (error) {
+            console.error('Verification error:', error);
+            alert('❌ Verification failed. Please try logging in manually.');
+            window.location.href = 'index.html';
+        }
+    }
+}
+
 // Check if user is logged in when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    const userId = localStorage.getItem('navai_userId');
-    if (!userId) {
-        // Redirect to homepage with signup modal
-        window.location.href = 'index.html';
-        return;
-    }
+    // First handle any verification redirect
+    handleVerificationRedirect().then(() => {
+        // Then check if user is logged in
+        const userId = localStorage.getItem('navai_userId');
+        if (!userId) {
+            // Redirect to homepage with signup modal
+            window.location.href = 'index.html';
+            return;
+        }
+    });
 });
 </script>
 <script src="script.js?v=4"></script>
