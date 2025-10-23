@@ -41,29 +41,23 @@ function handleOneTimeClick() {
     let userCredits = localStorage.getItem('navai_credits') || 10;
     let currentUserId = localStorage.getItem('navai_userId');
     let userEmail = localStorage.getItem('navai_email');
-    localStorage.setItem('navai_credits', userCredits);
 
-    // Simple user storage functions
+    // Simple user storage functions (for credits only)
     function getStoredUsers() {
         return JSON.parse(localStorage.getItem('navai_users') || '[]');
     }
 
-    function saveUser(email, password, userId, credits = 10) {
+    function saveUser(email, userId, credits = 10) {
         const users = getStoredUsers();
         const existingUserIndex = users.findIndex(u => u.email === email);
         
         if (existingUserIndex >= 0) {
-            users[existingUserIndex] = { email, password, userId, credits };
+            users[existingUserIndex] = { email, userId, credits };
         } else {
-            users.push({ email, password, userId, credits });
+            users.push({ email, userId, credits });
         }
         
         localStorage.setItem('navai_users', JSON.stringify(users));
-    }
-
-    function validateUser(email, password) {
-        const users = getStoredUsers();
-        return users.find(u => u.email === email && u.password === password);
     }
 
     function updateUserCredits(userId, newCredits) {
@@ -163,182 +157,33 @@ function handleOneTimeClick() {
     }
 
     function showSignupPopup() {
-        const popup = document.createElement('div');
-        popup.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; align-items: center;
-            justify-content: center; z-index: 10000;
-        `;
-        
-        popup.innerHTML = `
-            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; position: relative;">
-                <button id="closePopup" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
-                
-                <h2 style="margin: 0 0 15px 0; color: #333;">Get 10 Free Credits! 🎨</h2>
-                <p style="margin: 0 0 20px 0; color: #666;">Sign up to start generating AI images</p>
-                
-                <input type="email" id="signupEmail" placeholder="Email address" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
-                <input type="password" id="signupPassword" placeholder="Password" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
-                
-                <button id="signupBtn" style="width: 100%; padding: 12px; background: #00bfff; color: white; border: none; border-radius: 6px; margin: 8px 0; cursor: pointer;">
-                    Sign Up & Get 10 Credits
-                </button>
-                <button id="loginBtn" style="width: 100%; padding: 12px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; margin: 8px 0; cursor: pointer;">
-                    Already have an account? Login
-                </button>
-            </div>
-        `;
-
-        document.body.appendChild(popup);
-
-        qs('#closePopup').addEventListener('click', () => {
-            document.body.removeChild(popup);
-        });
-
-        qs('#signupBtn').addEventListener('click', async () => {
-            const email = qs('#signupEmail').value.trim();
-            const password = qs('#signupPassword').value.trim();
-            
-            if (!email || !password) {
-                showMessagePopup('Missing Information', 'Please enter both email and password', false);
-                return;
-            }
-
-            const existingUser = getStoredUsers().find(u => u.email === email);
-            if (existingUser) {
-                showMessagePopup('Email Exists', 'This email is already registered. Please log in instead.', false);
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'signup', email, password })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    saveUser(email, password, data.userId, data.credits);
-                    
-                    currentUserId = data.userId;
-                    userCredits = data.credits;
-                    userEmail = email;
-                    
-                    localStorage.setItem('navai_userId', currentUserId);
-                    localStorage.setItem('navai_credits', userCredits);
-                    localStorage.setItem('navai_email', email);
-                    
-                    document.body.removeChild(popup);
-                    updateCreditDisplay();
-                    updateAuthUI();
-                    showMessagePopup('Welcome! 🎉', 'You have 10 free credits to start generating amazing AI images!');
-                } else {
-                    showMessagePopup('Signup Failed', data.message, false);
-                }
-            } catch (error) {
-                showMessagePopup('Signup Error', 'Could not create account. Please try again.', false);
-            }
-        });
-
-        qs('#loginBtn').addEventListener('click', () => {
-            document.body.removeChild(popup);
-            showLoginPopup();
-        });
-
-        popup.addEventListener('click', (e) => {
-            if (e.target === popup) {
-                document.body.removeChild(popup);
-            }
-        });
+        // Use the modal from index.html instead of creating a new one
+        const authModal = document.getElementById('auth-modal');
+        if (authModal) {
+            authModal.style.display = 'flex';
+            // Reset form to signup mode
+            document.querySelector('#auth-form button').textContent = 'Sign Up';
+            document.querySelector('button[onclick="showLogin()"]').style.display = 'block';
+            document.getElementById('auth-message').style.display = 'none';
+        } else {
+            // Fallback: redirect to index.html for signup
+            window.location.href = 'index.html';
+        }
     }
 
     function showLoginPopup() {
-        const popup = document.createElement('div');
-        popup.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; align-items: center;
-            justify-content: center; z-index: 10000;
-        `;
-        
-        popup.innerHTML = `
-            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; position: relative;">
-                <button id="closePopup" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
-                
-                <h2 style="margin: 0 0 15px 0; color: #333;">Login to Your Account</h2>
-                
-                <input type="email" id="loginEmail" placeholder="Email address" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
-                <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
-                
-                <button id="loginBtnMain" style="width: 100%; padding: 12px; background: #00bfff; color: white; border: none; border-radius: 6px; margin: 8px 0; cursor: pointer;">
-                    Login
-                </button>
-                <button id="signupBtnMain" style="width: 100%; padding: 12px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; margin: 8px 0; cursor: pointer;">
-                    Don't have an account? Sign Up
-                </button>
-            </div>
-        `;
-
-        document.body.appendChild(popup);
-
-        qs('#closePopup').addEventListener('click', () => {
-            document.body.removeChild(popup);
-        });
-
-        qs('#loginBtnMain').addEventListener('click', async () => {
-            const email = qs('#loginEmail').value.trim();
-            const password = qs('#loginPassword').value.trim();
-            
-            if (!email || !password) {
-                showMessagePopup('Missing Information', 'Please enter both email and password', false);
-                return;
-            }
-
-            const user = validateUser(email, password);
-            if (!user) {
-                showMessagePopup('Login Failed', 'Invalid email or password', false);
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'login', email, password })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentUserId = user.userId;
-                    userCredits = user.credits;
-                    userEmail = email;
-                    
-                    localStorage.setItem('navai_userId', currentUserId);
-                    localStorage.setItem('navai_credits', userCredits);
-                    localStorage.setItem('navai_email', email);
-                    
-                    document.body.removeChild(popup);
-                    updateCreditDisplay();
-                    updateAuthUI();
-                    showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
-                } else {
-                    showMessagePopup('Login Failed', data.message, false);
-                }
-            } catch (error) {
-                showMessagePopup('Login Error', 'Could not log in. Please try again.', false);
-            }
-        });
-
-        qs('#signupBtnMain').addEventListener('click', () => {
-            document.body.removeChild(popup);
-            showSignupPopup();
-        });
-
-        popup.addEventListener('click', (e) => {
-            if (e.target === popup) {
-                document.body.removeChild(popup);
-            }
-        });
+        // Use the modal from index.html instead of creating a new one
+        const authModal = document.getElementById('auth-modal');
+        if (authModal) {
+            authModal.style.display = 'flex';
+            // Set form to login mode
+            document.querySelector('#auth-form button').textContent = 'Login';
+            document.querySelector('button[onclick="showLogin()"]').style.display = 'none';
+            document.getElementById('auth-message').style.display = 'none';
+        } else {
+            // Fallback: redirect to index.html for login
+            window.location.href = 'index.html';
+        }
     }
 
     function showAccountMenu() {
@@ -397,7 +242,7 @@ function handleOneTimeClick() {
 
         if (currentUserId) {
             const displayEmail = userEmail && userEmail.length > 15 ? userEmail.substring(0, 15) + '...' : userEmail;
-            authButton.textContent = '👤 ' + (displayEmail || 'Account');
+            authButton.textContent = '�� ' + (displayEmail || 'Account');
             authButton.onclick = showAccountMenu;
         } else {
             authButton.textContent = '👤 Sign In';
@@ -469,7 +314,7 @@ function handleOneTimeClick() {
             }
 
             if (userCredits <= 0) {
-                showMessagePopup('Out of Credits! 🎨', 'Upgrade your plan to continue generating amazing images.', false);
+                showMessagePopup('Out of Credits! ��', 'Upgrade your plan to continue generating amazing images.', false);
                 setTimeout(() => window.location.href = 'plans.html', 2000);
                 return;
             }
@@ -491,7 +336,7 @@ function handleOneTimeClick() {
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ prompt }),
+                    body: JSON.stringify({ prompt, userId: currentUserId }),
                     signal: controller.signal
                 });
 
@@ -513,6 +358,7 @@ function handleOneTimeClick() {
                 // Update credits
                 userCredits = Math.max(0, userCredits - 1);
                 localStorage.setItem('navai_credits', userCredits);
+                updateUserCredits(currentUserId, userCredits);
                 updateCreditDisplay();
                 
                 // Create and display the image
