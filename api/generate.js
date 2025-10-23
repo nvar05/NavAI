@@ -22,16 +22,13 @@ module.exports = async (req, res) => {
 
     const { prompt, userId } = JSON.parse(body);
     
-    console.log('=== GENERATE REQUEST START ===');
-    console.log('User ID:', userId);
-    console.log('Prompt:', prompt);
-    console.log('Replicate Token exists:', !!process.env.REPLICATE_API_TOKEN);
+    console.log('Generate request - Prompt:', prompt, 'User ID:', userId);
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    // Call Replicate API with detailed logging
+    // Call Replicate API
     console.log('Calling Replicate API...');
     
     const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
@@ -51,34 +48,18 @@ module.exports = async (req, res) => {
       })
     });
 
-    console.log('Replicate response status:', replicateResponse.status);
-    console.log('Replicate response headers:', replicateResponse.headers);
-
-    const responseText = await replicateResponse.text();
-    console.log('Replicate raw response:', responseText);
-
     if (!replicateResponse.ok) {
-      console.error('Replicate API failed with status:', replicateResponse.status);
-      throw new Error(`Replicate API failed: ${replicateResponse.status} - ${responseText}`);
+      const errorText = await replicateResponse.text();
+      throw new Error(`Replicate API failed: ${replicateResponse.status}`);
     }
 
-    let prediction;
-    try {
-      prediction = JSON.parse(responseText);
-      console.log('Parsed prediction:', JSON.stringify(prediction, null, 2));
-    } catch (parseError) {
-      console.error('Failed to parse Replicate response:', parseError);
-      throw new Error('Invalid JSON from Replicate API');
-    }
+    const prediction = await replicateResponse.json();
 
     if (!prediction.id) {
-      console.error('NO PREDICTION ID FOUND IN RESPONSE');
-      console.error('Full response structure:', Object.keys(prediction));
-      throw new Error('No prediction ID received. Replicate response: ' + JSON.stringify(prediction));
+      throw new Error('No prediction ID received');
     }
 
-    console.log('Prediction ID received:', prediction.id);
-    console.log('Prediction status:', prediction.status);
+    console.log('Prediction started:', prediction.id);
     
     // Poll for completion
     let result = prediction;
@@ -89,39 +70,30 @@ module.exports = async (req, res) => {
       attempts++;
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      console.log(`Polling attempt ${attempts}/${maxAttempts}`);
       const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: {
           'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
         },
       });
       
-      if (!statusResponse.ok) {
-        throw new Error('Failed to check prediction status');
-      }
-      
       result = await statusResponse.json();
-      console.log(`Poll result ${attempts}:`, result.status);
       
       if (result.status === 'succeeded') {
-        console.log('=== GENERATION SUCCEEDED ===');
-        console.log('Output URLs:', result.output);
+        console.log('Generation succeeded!');
+        
+        // Return the EXACT format your frontend expects
         return res.json({ 
-          success: true,
-          imageUrl: result.output[0],
-          creditsRemaining: 9
+          imageUrl: result.output[0]  // Frontend expects just imageUrl, not nested in success object
         });
       } else if (result.status === 'failed') {
-        console.error('Generation failed:', result.error);
-        throw new Error('AI generation failed: ' + (result.error || 'Unknown error'));
+        throw new Error('AI generation failed');
       }
     }
     
-    throw new Error('Generation timeout after ' + maxAttempts + ' attempts');
+    throw new Error('Generation timeout');
 
   } catch (error) {
-    console.error('=== GENERATION ERROR ===');
-    console.error(error);
+    console.error('Generation error:', error);
     res.status(500).json({ 
       error: error.message || 'AI generation failed'
     });
