@@ -1,7 +1,8 @@
-const nodemailer = require('nodemailer');
+// For nodemailer v7+
+import nodemailer from 'nodemailer';
 
-module.exports = async (req, res) => {
-  console.log('🔔 CONTACT API CALLED - DEBUG');
+export default async function handler(req, res) {
+  console.log('📧 Contact API called - Nodemailer v7');
   res.setHeader('Content-Type', 'application/json');
   
   if (req.method !== 'POST') {
@@ -11,25 +12,23 @@ module.exports = async (req, res) => {
 
   try {
     console.log('🔍 Checking environment variables...');
-    console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'MISSING');
-    console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'SET' : 'MISSING');
+    console.log('EMAIL_USER exists:', !!process.env.EMAIL_USER);
+    console.log('EMAIL_PASS exists:', !!process.env.EMAIL_PASS);
     
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       console.log('❌ Missing email credentials');
       return res.status(500).json({ error: 'Email service not configured' });
     }
 
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    console.log('📝 Request body:', body);
-    
-    const { name, email, message } = body;
+    const { name, email, message } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    console.log('📝 Form data received:', { name, email, message: message?.substring(0, 50) + '...' });
     
     if (!name || !email || !message) {
       console.log('❌ Missing fields');
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    console.log('�� Creating email transporter...');
+    console.log('🔧 Creating email transporter...');
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -38,7 +37,7 @@ module.exports = async (req, res) => {
       },
     });
 
-    console.log('📨 Sending email from:', process.env.EMAIL_USER);
+    console.log('📨 Sending email...');
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_USER,
@@ -63,7 +62,6 @@ Sent from NavAI contact form
     
   } catch (error) {
     console.error('❌ Email error:', error);
-    console.error('Error details:', error.message);
     res.status(500).json({ error: 'Failed to send message: ' + error.message });
   }
-};
+}
