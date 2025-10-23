@@ -178,9 +178,11 @@ document.getElementById('auth-form').addEventListener('submit', async function(e
   }
 });
 
-// Initialize with signup mode when page loads
+// Force update UI when page loads to ensure correct initial state
 document.addEventListener('DOMContentLoaded', function() {
-  updateAuthUI(); // This ensures it starts with Sign Up mode
+  // Set initial state explicitly
+  currentAuthMode = 'signup';
+  updateAuthUI();
 });
 </script>
 <script src="script.js?v=4"></script>
