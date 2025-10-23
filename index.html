@@ -178,11 +178,12 @@ document.getElementById('auth-form').addEventListener('submit', async function(e
   }
 });
 
-// Force update UI when page loads to ensure correct initial state
+// Initialize the modal with correct text on page load
 document.addEventListener('DOMContentLoaded', function() {
-  // Set initial state explicitly
-  currentAuthMode = 'signup';
-  updateAuthUI();
+  // Pre-set the HTML elements to signup mode
+  document.getElementById('auth-title').textContent = 'Join NavAI - Get 10 Free Credits';
+  document.getElementById('auth-submit-btn').textContent = 'Sign Up & Get Credits';
+  document.getElementById('auth-switch-btn').textContent = 'Already have an account? Login';
 });
 </script>
 <script src="script.js?v=4"></script>
