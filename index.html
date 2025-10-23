@@ -43,9 +43,100 @@
     </div>
 </section>
 
+<!-- Simple Auth Button -->
+<div style="text-align: center; margin-top: 30px;">
+  <button onclick="showAuth()" style="background: rgba(0,191,255,0.2); border: 1px solid #00bfff; color: #00bfff; padding: 12px 30px; border-radius: 25px; cursor: pointer; font-size: 16px;">
+    🚀 Sign Up / Login (Get 10 Free Credits)
+  </button>
+</div>
+
+<!-- Auth Modal -->
+<div id="auth-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center;">
+  <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #00bfff;">
+    <h3 style="color: #00bfff; text-align: center;">Join NavAI</h3>
+    <div id="auth-message" style="margin: 10px 0; padding: 10px; border-radius: 5px; display: none;"></div>
+    <form id="auth-form">
+      <input type="email" id="auth-email" placeholder="Your Email" required style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #0a0f1f; color: white;">
+      <input type="password" id="auth-password" placeholder="Password" required style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #0a0f1f; color: white;">
+      <button type="submit" style="width: 100%; padding: 12px; background: #00bfff; color: white; border: none; border-radius: 8px; margin: 10px 0; cursor: pointer;">Sign Up</button>
+    </form>
+    <button onclick="showLogin()" style="background: none; border: none; color: #00bfff; cursor: pointer; margin-top: 10px;">Already have an account? Login</button>
+    <button onclick="closeAuth()" style="background: none; border: none; color: #888; cursor: pointer; margin-top: 10px;">Maybe later</button>
+  </div>
+</div>
+
 <footer class="footer">
     <p>&copy; 2025 NavAI. All rights reserved.</p>
 </footer>
+
+<script>
+// Auth functions - won't break existing code
+function showAuth() {
+  document.getElementById('auth-modal').style.display = 'flex';
+}
+
+function closeAuth() {
+  document.getElementById('auth-modal').style.display = 'none';
+}
+
+function showLogin() {
+  document.querySelector('#auth-form button').textContent = 'Login';
+  document.querySelector('button[onclick="showLogin()"]').style.display = 'none';
+}
+
+document.getElementById('auth-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const email = document.getElementById('auth-email').value;
+  const password = document.getElementById('auth-password').value;
+  const isLogin = document.querySelector('#auth-form button').textContent === 'Login';
+  
+  try {
+    const response = await fetch('/api/auth', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ 
+        action: isLogin ? 'login' : 'signup', 
+        email, 
+        password 
+      })
+    });
+    
+    const data = await response.json();
+    const messageEl = document.getElementById('auth-message');
+    
+    if (data.success) {
+      if (data.needsVerification) {
+        messageEl.style.background = '#2a2a4a';
+        messageEl.style.color = '#00bfff';
+        messageEl.textContent = data.message;
+        messageEl.style.display = 'block';
+      } else {
+        messageEl.style.background = '#1a3a1a';
+        messageEl.style.color = '#00ff00';
+        messageEl.textContent = 'Success! You can now generate images.';
+        messageEl.style.display = 'block';
+        localStorage.setItem('navai_userId', data.userId);
+        localStorage.setItem('navai_credits', data.credits);
+        setTimeout(() => {
+          closeAuth();
+          window.location.href = 'generate.html';
+        }, 2000);
+      }
+    } else {
+      messageEl.style.background = '#3a1a1a';
+      messageEl.style.color = '#ff6b6b';
+      messageEl.textContent = data.message;
+      messageEl.style.display = 'block';
+    }
+  } catch (error) {
+    const messageEl = document.getElementById('auth-message');
+    messageEl.style.background = '#3a1a1a';
+    messageEl.style.color = '#ff6b6b';
+    messageEl.textContent = 'Network error. Please try again.';
+    messageEl.style.display = 'block';
+  }
+});
+</script>
 <script src="script.js?v=2"></script>
 </body>
 </html>

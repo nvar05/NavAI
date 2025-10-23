@@ -37,11 +37,13 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    // Check user credits if userId is provided
+    let userCredits = null;
+
+    // If userId provided, check Supabase credits and verify user
     if (userId) {
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('credits')
+        .select('credits, verified')
         .eq('id', userId)
         .single();
 
@@ -50,12 +52,22 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'User not found' });
       }
 
-      if (!user || user.credits <= 0) {
+      if (!user) {
+        return res.status(400).json({ error: 'User not found' });
+      }
+
+      if (!user.verified) {
+        return res.status(400).json({ error: 'Please verify your email first' });
+      }
+
+      if (user.credits <= 0) {
         return res.status(400).json({ error: 'Insufficient credits' });
       }
 
-      console.log('User credits before:', user.credits);
+      userCredits = user.credits;
+      console.log('User credits before:', userCredits);
     }
+    // If no userId, frontend handles credits via localStorage (existing system)
 
     // Call Replicate API
     console.log('Calling Replicate API...');
@@ -111,17 +123,17 @@ module.exports = async (req, res) => {
       if (result.status === 'succeeded') {
         console.log('=== GENERATION SUCCEEDED ===');
         
-        // Deduct credit if userId provided
-        if (userId) {
+        // Deduct credit if userId provided (verified user)
+        if (userId && userCredits !== null) {
           const { error: updateError } = await supabase
             .from('users')
-            .update({ credits: user.credits - 1 })
+            .update({ credits: userCredits - 1 })
             .eq('id', userId);
 
           if (updateError) {
             console.error('Credit update error:', updateError);
           } else {
-            console.log('Credit deducted successfully');
+            console.log('Credit deducted successfully from Supabase');
           }
         }
         

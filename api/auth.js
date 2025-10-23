@@ -29,45 +29,56 @@ module.exports = async (req, res) => {
 
     const { action, email, password } = JSON.parse(body);
     
-    if (!action || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    if (!action || !email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
     console.log('Auth request:', action, email);
 
     if (action === 'signup') {
+      if (!password) {
+        return res.status(400).json({ success: false, message: 'Password is required for signup' });
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${process.env.YOUR_DOMAIN || 'https://nav-ai.co.uk'}/verify.html`
+        }
       });
 
       if (error) {
         return res.status(400).json({ success: false, message: error.message });
       }
 
-      // Create user record WITHOUT password field (it's in auth.users)
-      const { error: dbError } = await supabase
-        .from('users')
-        .insert([{ 
-          id: data.user.id, 
-          email: email,
-          credits: 10 
-          // Don't include password - it's handled by Supabase Auth
-        }]);
+      // Create user record (will be used after email verification)
+      if (data.user) {
+        const { error: dbError } = await supabase
+          .from('users')
+          .insert([{ 
+            id: data.user.id, 
+            email: email,
+            credits: 10,
+            verified: false // Mark as unverified until email confirmation
+          }]);
 
-      if (dbError) {
-        console.error('Database error:', dbError);
-        // If user creation fails, still return success but log the error
-        // This allows users to continue even if the users table has issues
+        if (dbError) {
+          console.error('Database error:', dbError);
+        }
       }
 
       return res.json({ 
         success: true, 
-        userId: data.user.id,
-        credits: 10
+        message: 'Check your email for verification link',
+        needsVerification: true
       });
       
     } else if (action === 'login') {
+      if (!password) {
+        return res.status(400).json({ success: false, message: 'Password is required for login' });
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -77,40 +88,27 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, message: error.message });
       }
 
-      // Get user credits - create user if doesn't exist
+      // Check if user is verified
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('credits')
+        .select('credits, verified')
         .eq('id', data.user.id)
         .single();
 
-      if (userError) {
-        console.error('User lookup error:', userError);
-        // Create user if doesn't exist
-        const { error: createError } = await supabase
-          .from('users')
-          .insert([{ 
-            id: data.user.id, 
-            email: email,
-            credits: 10 
-          }]);
-        
-        if (createError) {
-          console.error('User creation error:', createError);
-        }
-        
-        return res.json({ 
-          success: true, 
-          userId: data.user.id,
-          credits: 10
-        });
+      if (userError || !userData) {
+        return res.status(400).json({ success: false, message: 'User not found' });
+      }
+
+      if (!userData.verified) {
+        return res.status(400).json({ success: false, message: 'Please verify your email first' });
       }
 
       return res.json({ 
         success: true, 
         userId: data.user.id,
-        credits: userData?.credits || 10
+        credits: userData.credits
       });
+      
     } else {
       return res.status(400).json({ success: false, message: 'Invalid action' });
     }
