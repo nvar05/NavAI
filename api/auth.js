@@ -44,7 +44,7 @@ module.exports = async (req, res) => {
         email,
         password,
         options: {
-          emailRedirectTo: 'https://nav-ai.co.uk/verify.html' // Fixed URL
+          emailRedirectTo: 'https://nav-ai.co.uk/verify.html'
         }
       });
 
@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
             id: data.user.id, 
             email: email,
             credits: 10,
-            verified: false // Mark as unverified until email confirmation
+            verified: false
           }]);
 
         if (dbError) {
@@ -70,7 +70,7 @@ module.exports = async (req, res) => {
 
       return res.json({ 
         success: true, 
-        message: 'Check your email for verification link',
+        message: '📧 Verification email sent! Check your inbox (and spam folder) for the verification link. Click the link to activate your account and get 10 free credits!',
         needsVerification: true
       });
       
@@ -100,13 +100,14 @@ module.exports = async (req, res) => {
       }
 
       if (!userData.verified) {
-        return res.status(400).json({ success: false, message: 'Please verify your email first' });
+        return res.status(400).json({ success: false, message: '❌ Please verify your email first! Check your inbox for the verification link to get your 10 free credits.' });
       }
 
       return res.json({ 
         success: true, 
         userId: data.user.id,
-        credits: userData.credits
+        credits: userData.credits,
+        message: '✅ Login successful! Welcome back.'
       });
       
     } else {
