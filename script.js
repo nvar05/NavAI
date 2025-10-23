@@ -1,3 +1,54 @@
+// GLOBAL PAYMENT FUNCTIONS - DEBUG VERSION
+function handlePlanClick(plan) {
+    console.log('=== PAYMENT DEBUG START ===');
+    
+    // Get currentUserId from localStorage directly
+    const currentUserId = localStorage.getItem('navai_userId');
+    console.log('Plan:', plan);
+    console.log('User ID from localStorage:', currentUserId);
+    console.log('Full localStorage:', localStorage);
+    
+    if (!currentUserId) {
+        console.log('NO USER ID FOUND - showing signup');
+        alert('Please log in first!');
+        return;
+    }
+    
+    const requestBody = { 
+        plan: plan, 
+        userId: currentUserId 
+    };
+    
+    console.log('Sending request body:', requestBody);
+    console.log('Stringified:', JSON.stringify(requestBody));
+    
+    fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(requestBody)
+    })
+    .then(r => {
+        console.log('Response status:', r.status);
+        console.log('Response headers:', r.headers);
+        return r.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            console.log('Payment error response:', data);
+            alert('Payment Error: ' + (data.error || 'Could not start payment process.'));
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        alert('Error: ' + err.message);
+    });
+    
+    console.log('=== PAYMENT DEBUG END ===');
+}
+
 function handleOneTimeClick() {
     console.log('One-time payment clicked');
     
@@ -38,7 +89,7 @@ function handleOneTimeClick() {
     const qs = (selector) => document.querySelector(selector);
     const qsa = (selector) => Array.from(document.querySelectorAll(selector));
 
-    let userCredits = localStorage.getItem('navai_credits') || 10;
+    let userCredits = Number(localStorage.getItem('navai_credits')) || 10;
     let currentUserId = localStorage.getItem('navai_userId');
     let userEmail = localStorage.getItem('navai_email');
     localStorage.setItem('navai_credits', userCredits);
@@ -436,7 +487,7 @@ function handleOneTimeClick() {
         });
     }
 
-    // GENERATE BUTTON FUNCTIONALITY - FIXED VERSION
+    // GENERATE BUTTON FUNCTIONALITY - Updated to start + poll using same /api/generate endpoint
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
         const promptBox = qs('#prompt-box');
@@ -458,6 +509,35 @@ function handleOneTimeClick() {
                 generateBtn.textContent = 'Generate Image';
                 outputArea.classList.remove('loading');
             }
+        }
+
+        async function pollPrediction(predictionId) {
+            const maxPolls = 45; // ~90 seconds max
+            const interval = 2000;
+            for (let i = 0; i < maxPolls; i++) {
+                await new Promise(r => setTimeout(r, interval));
+                try {
+                    const resp = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'status', predictionId, userId: currentUserId })
+                    });
+                    const data = await resp.json();
+                    if (!resp.ok) throw new Error(data.error || 'Status check failed');
+
+                    if (data.status === 'succeeded' && data.imageUrl) {
+                        return data;
+                    } else if (data.status === 'failed') {
+                        throw new Error(data.error || 'Generation failed');
+                    } else {
+                        // still processing - optionally update a status UI
+                        console.log('Generation status:', data.status);
+                    }
+                } catch (err) {
+                    console.warn('Poll error (non-fatal):', err);
+                }
+            }
+            throw new Error('Generation timeout. Try again or simplify your prompt.');
         }
 
         generateBtn.addEventListener('click', async (e) => {
@@ -484,34 +564,25 @@ function handleOneTimeClick() {
             setLoading(true);
             
             try {
-                // Call your generate API
-                const response = await fetch('/api/generate', {
+                // 1) start the prediction
+                const startResp = await fetch('/api/generate', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        prompt: prompt,
-                        userId: currentUserId
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'start', prompt, userId: currentUserId })
                 });
+                const startData = await startResp.json();
+                if (!startResp.ok) throw new Error(startData.error || 'Failed to start generation');
 
-                const data = await response.json();
+                if (!startData.predictionId) throw new Error('No prediction ID received');
 
-                if (!response.ok) {
-                    throw new Error(data.error || 'Generation failed');
-                }
+                // 2) poll status
+                const resultData = await pollPrediction(startData.predictionId);
 
-                if (data.success && data.imageUrl) {
-                    // Remove placeholder text
-                    if (placeholderText) {
-                        placeholderText.style.display = 'none';
-                    }
-                    
-                    // Create and display the image
+                if (resultData && resultData.imageUrl) {
+                    if (placeholderText) placeholderText.style.display = 'none';
                     const img = document.createElement('img');
                     img.id = 'output-image';
-                    img.src = data.imageUrl;
+                    img.src = resultData.imageUrl;
                     img.alt = 'Generated image: ' + prompt;
                     img.style.cssText = `
                         max-width: 100%;
@@ -519,24 +590,20 @@ function handleOneTimeClick() {
                         border-radius: 12px;
                         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                     `;
-                    
                     outputArea.appendChild(img);
-                    
-                    // Update credits display
-                    userCredits = data.creditsRemaining;
+
+                    userCredits = typeof resultData.creditsRemaining !== 'undefined' && resultData.creditsRemaining !== null ? resultData.creditsRemaining : Math.max(0, userCredits - 1);
                     localStorage.setItem('navai_credits', userCredits);
                     updateCreditDisplay();
-                    
-                    showMessagePopup('Success! 🎉', `Image generated! You have ${data.creditsRemaining} credits remaining.`);
+                    showMessagePopup('Success! 🎉', `Image generated! You have ${userCredits} credits remaining.`);
                 } else {
-                    throw new Error('No image URL received');
+                    throw new Error('No image returned from server');
                 }
                 
             } catch (error) {
                 console.error('Generation error:', error);
                 showMessagePopup('Generation Failed', error.message || 'Failed to generate image. Please try again.', false);
                 
-                // Show placeholder again
                 if (placeholderText) {
                     placeholderText.style.display = 'block';
                     placeholderText.textContent = 'Your generated image will appear here';
