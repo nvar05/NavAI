@@ -1,8 +1,36 @@
-function handleOneTimeClick() {
-    console.log('One-time payment clicked');
-    
+// GLOBAL PAYMENT FUNCTIONS
+function handlePlanClick(plan) {
     const currentUserId = localStorage.getItem('navai_userId');
-    console.log('User ID:', currentUserId);
+    
+    if (!currentUserId) {
+        alert('Please log in first!');
+        return;
+    }
+    
+    fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ 
+            plan: plan, 
+            userId: currentUserId 
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert('Payment Error: ' + (data.error || 'Could not start payment process.'));
+        }
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        alert('Error: ' + err.message);
+    });
+}
+
+function handleOneTimeClick() {
+    const currentUserId = localStorage.getItem('navai_userId');
     
     if (!currentUserId) {
         alert('Please log in first!');
@@ -38,7 +66,7 @@ function handleOneTimeClick() {
     const qs = (selector) => document.querySelector(selector);
     const qsa = (selector) => Array.from(document.querySelectorAll(selector));
 
-    let userCredits = localStorage.getItem('navai_credits') || 10;
+    let userCredits = Number(localStorage.getItem('navai_credits')) || 10;
     let currentUserId = localStorage.getItem('navai_userId');
     let userEmail = localStorage.getItem('navai_email');
     localStorage.setItem('navai_credits', userCredits);
@@ -436,7 +464,7 @@ function handleOneTimeClick() {
         });
     }
 
-    // GENERATE BUTTON FUNCTIONALITY - FIXED WITH TIMEOUT
+    // OLD WORKING GENERATE FUNCTION - matches the old api/generate.js
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
         const promptBox = qs('#prompt-box');
@@ -450,7 +478,7 @@ function handleOneTimeClick() {
                 generateBtn.disabled = true;
                 generateBtn.textContent = 'Generating...';
                 outputArea.classList.add('loading');
-                if (placeholderText) placeholderText.textContent = 'Generating your image... (this may take 20-30 seconds)';
+                if (placeholderText) placeholderText.textContent = 'Generating your image...';
                 const existingImages = outputArea.querySelectorAll('#output-image');
                 existingImages.forEach(img => img.remove());
             } else {
@@ -484,58 +512,48 @@ function handleOneTimeClick() {
             setLoading(true);
             
             try {
-                // Add timeout for the fetch request (60 seconds)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 60000);
-
+                // OLD WORKING VERSION - only sends { prompt } and expects { imageUrl }
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ prompt }),
-                    signal: controller.signal
+                    body: JSON.stringify({ prompt }) // Only prompt, no userId
                 });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Generation failed');
-                }
-
+                
                 const data = await response.json();
                 
-                if (!data.imageUrl) {
+                if (!response.ok) throw new Error(data.error || 'Generation failed');
+
+                // OLD VERSION: Expects imageUrl directly
+                if (data.imageUrl) {
+                    if (placeholderText) placeholderText.style.display = 'none';
+                    const img = document.createElement('img');
+                    img.id = 'output-image';
+                    img.src = data.imageUrl;
+                    img.alt = 'Generated image: ' + prompt;
+                    img.style.cssText = '
+                        max-width: 100%;
+                        max-height: 500px;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    ';
+                    outputArea.appendChild(img);
+
+                    // Deduct credit locally
+                    userCredits = Math.max(0, userCredits - 1);
+                    localStorage.setItem('navai_credits', userCredits);
+                    updateCreditDisplay();
+                    showMessagePopup('Success! 🎉', `Image generated! You have ${userCredits} credits remaining.`);
+                } else {
                     throw new Error('No image URL received from server');
                 }
-
-                console.log('Generated image URL:', data.imageUrl);
-                
-                // Update credits
-                userCredits = Math.max(0, userCredits - 1);
-                localStorage.setItem('navai_credits', userCredits);
-                updateCreditDisplay();
-                
-                // Create and display the image
-                if (placeholderText) placeholderText.style.display = 'none';
-                const img = document.createElement('img');
-                img.id = 'output-image';
-                img.src = data.imageUrl;
-                img.alt = 'Generated image: ' + prompt;
-                img.style.cssText = 'max-width: 100%; max-height: 500px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);';
-                outputArea.appendChild(img);
-
-                showMessagePopup('Success! 🎉', `Image generated! You have ${userCredits} credits remaining.`);
                 
             } catch (error) {
                 console.error('Generation error:', error);
-                if (error.name === 'AbortError') {
-                    showMessagePopup('Generation Timeout', 'Image generation is taking longer than expected. Please check your Replicate dashboard.', false);
-                } else {
-                    showMessagePopup('Generation Failed', error.message, false);
-                }
+                showMessagePopup('Generation Failed', error.message || 'Failed to generate image. Please try again.', false);
+                
                 if (placeholderText) {
-                    placeholderText.textContent = 'Failed to generate. Please try again.';
                     placeholderText.style.display = 'block';
+                    placeholderText.textContent = 'Your generated image will appear here';
                 }
             } finally {
                 setLoading(false);
