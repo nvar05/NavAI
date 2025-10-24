@@ -155,14 +155,6 @@ function handleOneTimeClick() {
             }
         });
     }
-
-    function showSignupPopup() {
-        // Use the modal from index.html instead of creating a new one
-            document.getElementById('auth-message').style.display = 'none';
-        } else {
-            // Fallback: redirect to index.html for login
-            window.location.href = 'index.html';
-        }
     }
 
     function showAccountMenu() {
@@ -440,6 +432,27 @@ function handleOneTimeClick() {
             document.getElementById('auth-message').style.display = 'none';
         } else {
             // Fallback: redirect to index.html for login
+            window.location.href = 'index.html';
+        }
+    }
+
+    function showSignupPopup() {
+        // Use the modal from index.html instead of creating a new one
+        const authModal = document.getElementById('auth-modal');
+        if (authModal) {
+            authModal.style.display = 'flex';
+            // Reset form to signup mode using NEW selectors
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const switchBtn = document.getElementById('auth-switch-btn');
+            const title = document.getElementById('auth-title');
+            
+            if (submitBtn) submitBtn.textContent = 'Sign Up & Get Credits';
+            if (switchBtn) switchBtn.textContent = 'Already have an account? Login';
+            if (title) title.textContent = 'Join NavAI - Get 10 Free Credits';
+            
+            document.getElementById('auth-message').style.display = 'none';
+        } else {
+            // Fallback: redirect to index.html for signup
             window.location.href = 'index.html';
         }
     }
