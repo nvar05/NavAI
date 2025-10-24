@@ -69,12 +69,36 @@
   </div>
 </div>
 
+<!-- Success Message Display (hidden by default) -->
+<div id="success-message" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10001; justify-content: center; align-items: center;">
+  <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #00ff00; text-align: center;">
+    <div style="font-size: 48px; margin-bottom: 20px;">✅</div>
+    <h3 style="color: #00ff00; margin-bottom: 15px;">Email Verified Successfully!</h3>
+    <p style="color: white; margin-bottom: 20px;">Your account has been activated with 10 free credits! You can now log in and start generating images.</p>
+    <button onclick="closeSuccess()" style="padding: 10px 30px; background: #00ff00; color: black; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold;">
+      Continue to Login
+    </button>
+  </div>
+</div>
+
+<!-- Error Message Display (hidden by default) -->
+<div id="error-message" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10001; justify-content: center; align-items: center;">
+  <div style="background: #1a1a2e; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #ff6b6b; text-align: center;">
+    <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+    <h3 style="color: #ff6b6b; margin-bottom: 15px;" id="error-title">Verification Error</h3>
+    <p style="color: white; margin-bottom: 20px;" id="error-description"></p>
+    <button onclick="closeError()" style="padding: 10px 30px; background: #ff6b6b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">
+      OK
+    </button>
+  </div>
+</div>
+
 <footer class="footer">
     <p>&copy; 2025 NavAI. All rights reserved.</p>
 </footer>
 
 <script>
-let currentAuthMode = 'signup'; // Default to signup
+let currentAuthMode = 'signup';
 
 function showAuth(mode = 'signup') {
   currentAuthMode = mode;
@@ -109,6 +133,65 @@ function updateAuthUI() {
   }
 }
 
+function showSuccess() {
+  document.getElementById('success-message').style.display = 'flex';
+}
+
+function closeSuccess() {
+  document.getElementById('success-message').style.display = 'none';
+  showAuth('login');
+}
+
+function showError(title, description) {
+  document.getElementById('error-title').textContent = title;
+  document.getElementById('error-description').textContent = description;
+  document.getElementById('error-message').style.display = 'flex';
+}
+
+function closeError() {
+  document.getElementById('error-message').style.display = 'none';
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+// Handle email verification (both success and error)
+function handleVerification() {
+  // Check for SUCCESSFUL verification first (from hash)
+  const hash = window.location.hash.substring(1);
+  if (hash.includes('access_token')) {
+    const params = new URLSearchParams(hash);
+    const access_token = params.get('access_token');
+    const type = params.get('type');
+    
+    if (access_token && type === 'signup') {
+      showSuccess();
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+  }
+  
+  // Check for ERRORS (from query parameters)
+  const urlParams = new URLSearchParams(window.location.search);
+  const error = urlParams.get('error');
+  const errorDescription = urlParams.get('error_description');
+  
+  if (error) {
+    let title = 'Verification Failed';
+    let description = 'The verification link is invalid or has expired.';
+    
+    if (error === 'access_denied') {
+      if (errorDescription?.includes('expired')) {
+        title = 'Link Expired';
+        description = 'This verification link has expired. Please request a new verification email.';
+      } else {
+        title = 'Invalid Link';
+        description = 'This verification link is invalid or has already been used.';
+      }
+    }
+    
+    showError(title, description);
+  }
+}
+
 // Handle Generate Now button
 document.getElementById('generate-now-btn').addEventListener('click', function(e) {
   const userId = localStorage.getItem('navai_userId');
@@ -139,7 +222,6 @@ document.getElementById('auth-form').addEventListener('submit', async function(e
     
     if (data.success) {
       if (data.needsVerification) {
-        // SIGNUP - VERIFICATION REQUIRED
         messageEl.style.background = '#2a2a4a';
         messageEl.style.color = '#00bfff';
         messageEl.innerHTML = `
@@ -150,7 +232,6 @@ document.getElementById('auth-form').addEventListener('submit', async function(e
         messageEl.style.display = 'block';
         document.getElementById('auth-form').reset();
       } else {
-        // LOGIN SUCCESS - Verified user
         messageEl.style.background = '#1a3a1a';
         messageEl.style.color = '#00ff00';
         messageEl.textContent = data.message || '✅ Login successful!';
@@ -178,46 +259,12 @@ document.getElementById('auth-form').addEventListener('submit', async function(e
   }
 });
 
-// Initialize the modal with correct text on page load
+// Initialize
 document.addEventListener('DOMContentLoaded', function() {
-  // Pre-set the HTML elements to signup mode
-  document.getElementById('auth-title').textContent = 'Join NavAI - Get 10 Free Credits';
-  document.getElementById('auth-submit-btn').textContent = 'Sign Up & Get Credits';
-  document.getElementById('auth-switch-btn').textContent = 'Already have an account? Login';
+  updateAuthUI();
+  handleVerification(); // Check for verification on page load
 });
 </script>
 <script src="script.js?v=4"></script>
 </body>
 </html>
-
-// Handle email verification redirects
-function handleVerificationRedirect() {
-    const hash = window.location.hash.substring(1);
-    if (hash.includes('access_token')) {
-        console.log('Verification redirect detected on homepage');
-        
-        const params = new URLSearchParams(hash);
-        const access_token = params.get('access_token');
-        const type = params.get('type');
-        
-        if (access_token && type === 'signup') {
-            // Show verification in progress
-            showAuth('login'); // Show login modal since they're now verified
-            document.getElementById('auth-message').innerHTML = `
-                <div style="background: #2a2a4a; color: #00bfff; padding: 10px; border-radius: 5px;">
-                    <strong>✅ Email Verified!</strong><br>
-                    Your account has been activated with 10 free credits! You can now log in.
-                </div>
-            `;
-            document.getElementById('auth-message').style.display = 'block';
-            
-            // Clean the URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    }
-}
-
-// Call this when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    handleVerificationRedirect();
-});
