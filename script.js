@@ -155,6 +155,41 @@ function handleOneTimeClick() {
             }
         });
     }
+
+    function showSignupPopup() {
+        const authModal = document.getElementById('auth-modal');
+        if (authModal) {
+            authModal.style.display = 'flex';
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const switchBtn = document.getElementById('auth-switch-btn');
+            const title = document.getElementById('auth-title');
+            
+            if (submitBtn) submitBtn.textContent = 'Sign Up & Get Credits';
+            if (switchBtn) switchBtn.textContent = 'Already have an account? Login';
+            if (title) title.textContent = 'Join NavAI - Get 10 Free Credits';
+            
+            document.getElementById('auth-message').style.display = 'none';
+        } else {
+            window.location.href = 'index.html';
+        }
+    }
+
+    function showLoginPopup() {
+        const authModal = document.getElementById('auth-modal');
+        if (authModal) {
+            authModal.style.display = 'flex';
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const switchBtn = document.getElementById('auth-switch-btn');
+            const title = document.getElementById('auth-title');
+            
+            if (submitBtn) submitBtn.textContent = 'Login';
+            if (switchBtn) switchBtn.textContent = 'Don\'t have an account? Sign Up';
+            if (title) title.textContent = 'Login to Your Account';
+            
+            document.getElementById('auth-message').style.display = 'none';
+        } else {
+            window.location.href = 'index.html';
+        }
     }
 
     function showAccountMenu() {
@@ -213,7 +248,7 @@ function handleOneTimeClick() {
 
         if (currentUserId) {
             const displayEmail = userEmail && userEmail.length > 15 ? userEmail.substring(0, 15) + '...' : userEmail;
-            authButton.textContent = '�� ' + (displayEmail || 'Account');
+            authButton.textContent = '👤 ' + (displayEmail || 'Account');
             authButton.onclick = showAccountMenu;
         } else {
             authButton.textContent = '👤 Sign In';
@@ -252,7 +287,6 @@ function handleOneTimeClick() {
         });
     }
 
-    // GENERATE BUTTON FUNCTIONALITY - FIXED WITH TIMEOUT
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
         const promptBox = qs('#prompt-box');
@@ -285,7 +319,7 @@ function handleOneTimeClick() {
             }
 
             if (userCredits <= 0) {
-                showMessagePopup('Out of Credits! ��', 'Upgrade your plan to continue generating amazing images.', false);
+                showMessagePopup('Out of Credits! 🎨', 'Upgrade your plan to continue generating amazing images.', false);
                 setTimeout(() => window.location.href = 'plans.html', 2000);
                 return;
             }
@@ -300,7 +334,6 @@ function handleOneTimeClick() {
             setLoading(true);
             
             try {
-                // Add timeout for the fetch request (60 seconds)
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 60000);
 
@@ -326,13 +359,11 @@ function handleOneTimeClick() {
 
                 console.log('Generated image URL:', data.imageUrl);
                 
-                // Update credits
                 userCredits = Math.max(0, userCredits - 1);
                 localStorage.setItem('navai_credits', userCredits);
                 updateUserCredits(currentUserId, userCredits);
                 updateCreditDisplay();
                 
-                // Create and display the image
                 if (placeholderText) placeholderText.style.display = 'none';
                 const img = document.createElement('img');
                 img.id = 'output-image';
@@ -393,66 +424,3 @@ function handleOneTimeClick() {
         console.log('NavAI initialized 🚀');
     });
 })();
-
-    function showSignupPopup() {
-        // Use the modal from index.html instead of creating a new one
-        const authModal = document.getElementById('auth-modal');
-        if (authModal) {
-            authModal.style.display = 'flex';
-            // Reset form to signup mode using NEW selectors
-            const submitBtn = document.getElementById('auth-submit-btn');
-            const switchBtn = document.getElementById('auth-switch-btn');
-            const title = document.getElementById('auth-title');
-            
-            if (submitBtn) submitBtn.textContent = 'Sign Up & Get Credits';
-            if (switchBtn) switchBtn.textContent = 'Already have an account? Login';
-            if (title) title.textContent = 'Join NavAI - Get 10 Free Credits';
-            
-            document.getElementById('auth-message').style.display = 'none';
-        } else {
-            // Fallback: redirect to index.html for signup
-            window.location.href = 'index.html';
-        }
-    }
-
-    function showLoginPopup() {
-        // Use the modal from index.html instead of creating a new one
-        const authModal = document.getElementById('auth-modal');
-        if (authModal) {
-            authModal.style.display = 'flex';
-            // Set form to login mode using NEW selectors
-            const submitBtn = document.getElementById('auth-submit-btn');
-            const switchBtn = document.getElementById('auth-switch-btn');
-            const title = document.getElementById('auth-title');
-            
-            if (submitBtn) submitBtn.textContent = 'Login';
-            if (switchBtn) switchBtn.textContent = 'Don\'t have an account? Sign Up';
-            if (title) title.textContent = 'Login to Your Account';
-            
-            document.getElementById('auth-message').style.display = 'none';
-        } else {
-            // Fallback: redirect to index.html for login
-            window.location.href = 'index.html';
-        }
-    }
-
-    function showSignupPopup() {
-        // Use the modal from index.html instead of creating a new one
-        const authModal = document.getElementById('auth-modal');
-        if (authModal) {
-            authModal.style.display = 'flex';
-            // Reset form to signup mode using NEW selectors
-            const submitBtn = document.getElementById('auth-submit-btn');
-            const switchBtn = document.getElementById('auth-switch-btn');
-            const title = document.getElementById('auth-title');
-            
-            if (submitBtn) submitBtn.textContent = 'Sign Up & Get Credits';
-            if (switchBtn) switchBtn.textContent = 'Already have an account? Login';
-            if (title) title.textContent = 'Join NavAI - Get 10 Free Credits';
-            
-            document.getElementById('auth-message').style.display = 'none';
-        } else {
-            // Fallback: redirect to index.html for signup
-            window.location.href = 'index.html';
-        }
-    }
