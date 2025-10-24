@@ -13,7 +13,14 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { access_token, refresh_token } = JSON.parse(req.body);
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    
+    await new Promise((resolve) => {
+      req.on('end', resolve);
+    });
+
+    const { access_token, refresh_token } = JSON.parse(body);
     
     if (!access_token) {
       return res.status(400).json({ success: false, message: 'Invalid verification link' });
@@ -21,47 +28,35 @@ module.exports = async (req, res) => {
 
     console.log('Email verification attempt');
 
-    // Set the session and get user data
-    const { data, error } = await supabase.auth.setSession({
-      access_token,
-      refresh_token
+    // Verify the token and get user
+    const { data: { user }, error } = await supabase.auth.getUser(access_token);
+    
+    if (error || !user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired verification link' });
+    }
+    
+    console.log('User found:', user.id);
+    
+    // MARK USER AS VERIFIED
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ verified: true })
+      .eq('id', user.id);
+    
+    if (updateError) {
+      console.error('Update error:', updateError);
+      return res.status(400).json({ success: false, message: 'Failed to verify user' });
+    }
+    
+    console.log('User marked as verified:', user.id);
+    
+    return res.json({ 
+      success: true, 
+      message: 'Email verified successfully!',
+      userId: user.id,
+      credits: 10,
+      email: user.email
     });
-    
-    if (error) {
-      return res.status(400).json({ success: false, message: error.message });
-    }
-    
-    if (data.user) {
-      // MARK USER AS VERIFIED in your database
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ verified: true })
-        .eq('id', data.user.id);
-      
-      if (updateError) {
-        console.error('Update error:', updateError);
-        return res.status(400).json({ success: false, message: 'Failed to verify user' });
-      }
-      
-      console.log('User marked as verified:', data.user.id);
-      
-      // Get user data to return for auto-login
-      const { data: userData } = await supabase
-        .from('users')
-        .select('credits, email')
-        .eq('id', data.user.id)
-        .single();
-      
-      return res.json({ 
-        success: true, 
-        message: 'Email verified successfully!',
-        userId: data.user.id,
-        credits: userData?.credits || 10,
-        email: userData?.email || data.user.email
-      });
-    } else {
-      return res.status(400).json({ success: false, message: 'User not found' });
-    }
     
   } catch (error) {
     console.error('Verification error:', error);
