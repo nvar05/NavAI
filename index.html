@@ -113,6 +113,10 @@ function closeAuth() {
 }
 
 function switchAuthMode() {
+  currentAuthMode = currentAuthMode === "signup" ? "login" : "signup";
+  updateAuthUI();
+  document.getElementById("auth-form").reset();
+  document.getElementById("auth-message").style.display = "none";
   currentAuthMode = currentAuthMode === 'signup' ? 'login' : 'signup';
   updateAuthUI();
 }

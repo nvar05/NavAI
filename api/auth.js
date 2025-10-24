@@ -44,7 +44,7 @@ module.exports = async (req, res) => {
         email,
         password,
         options: {
-          emailRedirectTo: 'https://www.nav-ai.co.uk/index.html' // FIXED: Use www
+          emailRedirectTo: 'https://www.nav-ai.co.uk/index.html'
         }
       });
 
@@ -52,15 +52,13 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, message: error.message });
       }
 
-      // Check if user already exists
       if (data.user && data.user.identities && data.user.identities.length === 0) {
         return res.status(400).json({ 
           success: false, 
-          message: '❌ This email is already registered. Please try logging in instead.' 
+          message: 'This email is already registered. Please try logging in instead.' 
         });
       }
 
-      // Create user record
       if (data.user) {
         try {
           const { error: dbError } = await supabase
@@ -102,12 +100,28 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, message: error.message });
       }
 
-      console.log('Login successful for:', email);
-      
+      // Get user data with ACTUAL credits from database
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('credits, verified')
+        .eq('id', data.user.id)
+        .single();
+
+      if (userError || !userData) {
+        return res.status(400).json({ success: false, message: 'User not found. Please sign up first.' });
+      }
+
+      if (!userData.verified) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Please verify your email first. Check your inbox for the verification link.' 
+        });
+      }
+
       return res.json({ 
         success: true, 
         userId: data.user.id,
-        credits: 10,
+        credits: userData.credits, // Use ACTUAL credits from database
         message: '✅ Login successful! Welcome back.'
       });
       
