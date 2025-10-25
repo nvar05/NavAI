@@ -113,13 +113,6 @@ function closeAuth() {
 }
 
 function switchAuthMode() {
-  currentAuthMode = currentAuthMode === "signup" ? "login" : "signup";
-  updateAuthUI();
-  document.getElementById("auth-form").reset();
-  document.getElementById("auth-message").style.display = "none";
-}
-  document.getElementById("auth-form").reset();
-  document.getElementById("auth-message").style.display = "none";
   currentAuthMode = currentAuthMode === 'signup' ? 'login' : 'signup';
   updateAuthUI();
 }
@@ -178,7 +171,18 @@ function handleVerification() {
       .then(response => response.json())
       .then(data => {
         if (data.success) {
+      fetch("/api/verify-email", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ access_token })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
           showSuccess();
+        }
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
         }
       });
       window.history.replaceState({}, document.title, window.location.pathname);
