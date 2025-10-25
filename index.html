@@ -45,7 +45,7 @@
 
 <!-- Simple Auth Button -->
 <div style="text-align: center; margin-top: 30px;">
-  <button onclick="showAuth('signup')" style="background: rgba(0,191,255,0.2); border: 1px solid #00bfff; color: #00bfff; padding: 12px 30px; border-radius: 25px; cursor: pointer; font-size: 16px;">
+  <button onclick="showAuth('login')" style="background: rgba(0,191,255,0.2); border: 1px solid #00bfff; color: #00bfff; padding: 12px 30px; border-radius: 25px; cursor: pointer; font-size: 16px;">
     🚀 Sign Up / Login (Get 10 Free Credits)
   </button>
 </div>
@@ -100,7 +100,7 @@
 <script>
 let currentAuthMode = 'signup';
 
-function showAuth(mode = 'signup') {
+function showAuth(mode = 'login') {
   currentAuthMode = mode;
   updateAuthUI();
   document.getElementById('auth-modal').style.display = 'flex';
@@ -218,7 +218,7 @@ document.getElementById('generate-now-btn').addEventListener('click', function(e
   const userId = localStorage.getItem('navai_userId');
   if (!userId) {
     e.preventDefault();
-    showAuth('signup');
+    showAuth('login');
   }
 });
 
