@@ -372,7 +372,9 @@ function handleOneTimeClick() {
                 img.id = 'output-image';
                 img.src = data.imageUrl;
                 img.alt = 'Generated image: ' + prompt;
-                img.style.cssText = 'max-width: 100%; max-height: 500px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);';
+                img.style.cssText = 'max-width: 100%; max-height: 500px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: block; margin: 20px auto; background: #f0f0f0;';
+                img.onload = () => console.log('Image loaded successfully');
+                img.onerror = () => console.log('Image failed to load');
                 const imageContainer = outputArea.querySelector('.image-container');
 if (imageContainer) {
     imageContainer.appendChild(img);
