@@ -370,7 +370,12 @@ function handleOneTimeClick() {
                 img.src = data.imageUrl;
                 img.alt = 'Generated image: ' + prompt;
                 img.style.cssText = 'max-width: 100%; max-height: 500px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);';
-                outputArea.appendChild(img);
+                const imageContainer = outputArea.querySelector('.image-container');
+if (imageContainer) {
+    imageContainer.appendChild(img);
+} else {
+    outputArea.appendChild(img);
+}
 
                 showMessagePopup('Success! 🎉', `Image generated! You have ${userCredits} credits remaining.`);
                 
