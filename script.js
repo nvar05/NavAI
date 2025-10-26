@@ -358,6 +358,9 @@ function handleOneTimeClick() {
                 }
 
                 console.log('Generated image URL:', data.imageUrl);
+                console.log('Image element created, appending to container...');
+                console.log('outputArea found:', !!outputArea);
+                console.log('imageContainer found:', !!outputArea.querySelector('.image-container'));
                 
                 userCredits = Math.max(0, userCredits - 1);
                 localStorage.setItem('navai_credits', userCredits);
