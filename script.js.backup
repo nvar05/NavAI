@@ -1,36 +1,8 @@
-// GLOBAL PAYMENT FUNCTIONS
-function handlePlanClick(plan) {
-    const currentUserId = localStorage.getItem('navai_userId');
-    
-    if (!currentUserId) {
-        alert('Please log in first!');
-        return;
-    }
-    
-    fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-            plan: plan, 
-            userId: currentUserId 
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.url) {
-            window.location.href = data.url;
-        } else {
-            alert('Payment Error: ' + (data.error || 'Could not start payment process.'));
-        }
-    })
-    .catch(err => {
-        console.error('Fetch error:', err);
-        alert('Error: ' + err.message);
-    });
-}
-
 function handleOneTimeClick() {
+    console.log('One-time payment clicked');
+    
     const currentUserId = localStorage.getItem('navai_userId');
+    console.log('User ID:', currentUserId);
     
     if (!currentUserId) {
         alert('Please log in first!');
@@ -66,32 +38,26 @@ function handleOneTimeClick() {
     const qs = (selector) => document.querySelector(selector);
     const qsa = (selector) => Array.from(document.querySelectorAll(selector));
 
-    let userCredits = Number(localStorage.getItem('navai_credits')) || 10;
+    let userCredits = localStorage.getItem('navai_credits') || 10;
     let currentUserId = localStorage.getItem('navai_userId');
     let userEmail = localStorage.getItem('navai_email');
-    localStorage.setItem('navai_credits', userCredits);
 
-    // Simple user storage functions
+    // Simple user storage functions (for credits only)
     function getStoredUsers() {
         return JSON.parse(localStorage.getItem('navai_users') || '[]');
     }
 
-    function saveUser(email, password, userId, credits = 10) {
+    function saveUser(email, userId, credits = 10) {
         const users = getStoredUsers();
         const existingUserIndex = users.findIndex(u => u.email === email);
         
         if (existingUserIndex >= 0) {
-            users[existingUserIndex] = { email, password, userId, credits };
+            users[existingUserIndex] = { email, userId, credits };
         } else {
-            users.push({ email, password, userId, credits });
+            users.push({ email, userId, credits });
         }
         
         localStorage.setItem('navai_users', JSON.stringify(users));
-    }
-
-    function validateUser(email, password) {
-        const users = getStoredUsers();
-        return users.find(u => u.email === email && u.password === password);
     }
 
     function updateUserCredits(userId, newCredits) {
@@ -191,182 +157,39 @@ function handleOneTimeClick() {
     }
 
     function showSignupPopup() {
-        const popup = document.createElement('div');
-        popup.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; align-items: center;
-            justify-content: center; z-index: 10000;
-        `;
-        
-        popup.innerHTML = `
-            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; position: relative;">
-                <button id="closePopup" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
-                
-                <h2 style="margin: 0 0 15px 0; color: #333;">Get 10 Free Credits! 🎨</h2>
-                <p style="margin: 0 0 20px 0; color: #666;">Sign up to start generating AI images</p>
-                
-                <input type="email" id="signupEmail" placeholder="Email address" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
-                <input type="password" id="signupPassword" placeholder="Password" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
-                
-                <button id="signupBtn" style="width: 100%; padding: 12px; background: #00bfff; color: white; border: none; border-radius: 6px; margin: 8px 0; cursor: pointer;">
-                    Sign Up & Get 10 Credits
-                </button>
-                <button id="loginBtn" style="width: 100%; padding: 12px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; margin: 8px 0; cursor: pointer;">
-                    Already have an account? Login
-                </button>
-            </div>
-        `;
-
-        document.body.appendChild(popup);
-
-        qs('#closePopup').addEventListener('click', () => {
-            document.body.removeChild(popup);
-        });
-
-        qs('#signupBtn').addEventListener('click', async () => {
-            const email = qs('#signupEmail').value.trim();
-            const password = qs('#signupPassword').value.trim();
+        const authModal = document.getElementById('auth-modal');
+        if (authModal) {
+            authModal.style.display = 'flex';
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const switchBtn = document.getElementById('auth-switch-btn');
+            const title = document.getElementById('auth-title');
             
-            if (!email || !password) {
-                showMessagePopup('Missing Information', 'Please enter both email and password', false);
-                return;
-            }
-
-            const existingUser = getStoredUsers().find(u => u.email === email);
-            if (existingUser) {
-                showMessagePopup('Email Exists', 'This email is already registered. Please log in instead.', false);
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'signup', email, password })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    saveUser(email, password, data.userId, data.credits);
-                    
-                    currentUserId = data.userId;
-                    userCredits = data.credits;
-                    userEmail = email;
-                    
-                    localStorage.setItem('navai_userId', currentUserId);
-                    localStorage.setItem('navai_credits', userCredits);
-                    localStorage.setItem('navai_email', email);
-                    
-                    document.body.removeChild(popup);
-                    updateCreditDisplay();
-                    updateAuthUI();
-                    showMessagePopup('Welcome! 🎉', 'You have 10 free credits to start generating amazing AI images!');
-                } else {
-                    showMessagePopup('Signup Failed', data.message, false);
-                }
-            } catch (error) {
-                showMessagePopup('Signup Error', 'Could not create account. Please try again.', false);
-            }
-        });
-
-        qs('#loginBtn').addEventListener('click', () => {
-            document.body.removeChild(popup);
-            showLoginPopup();
-        });
-
-        popup.addEventListener('click', (e) => {
-            if (e.target === popup) {
-                document.body.removeChild(popup);
-            }
-        });
+            if (submitBtn) submitBtn.textContent = 'Sign Up & Get Credits';
+            if (switchBtn) switchBtn.textContent = 'Already have an account? Login';
+            if (title) title.textContent = 'Join NavAI - Get 10 Free Credits';
+            
+            document.getElementById('auth-message').style.display = 'none';
+        } else {
+            window.location.href = 'index.html';
+        }
     }
 
     function showLoginPopup() {
-        const popup = document.createElement('div');
-        popup.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; align-items: center;
-            justify-content: center; z-index: 10000;
-        `;
-        
-        popup.innerHTML = `
-            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; position: relative;">
-                <button id="closePopup" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
-                
-                <h2 style="margin: 0 0 15px 0; color: #333;">Login to Your Account</h2>
-                
-                <input type="email" id="loginEmail" placeholder="Email address" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
-                <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px;">
-                
-                <button id="loginBtnMain" style="width: 100%; padding: 12px; background: #00bfff; color: white; border: none; border-radius: 6px; margin: 8px 0; cursor: pointer;">
-                    Login
-                </button>
-                <button id="signupBtnMain" style="width: 100%; padding: 12px; background: #f0f0f0; color: #333; border: none; border-radius: 6px; margin: 8px 0; cursor: pointer;">
-                    Don't have an account? Sign Up
-                </button>
-            </div>
-        `;
-
-        document.body.appendChild(popup);
-
-        qs('#closePopup').addEventListener('click', () => {
-            document.body.removeChild(popup);
-        });
-
-        qs('#loginBtnMain').addEventListener('click', async () => {
-            const email = qs('#loginEmail').value.trim();
-            const password = qs('#loginPassword').value.trim();
+        const authModal = document.getElementById('auth-modal');
+        if (authModal) {
+            authModal.style.display = 'flex';
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const switchBtn = document.getElementById('auth-switch-btn');
+            const title = document.getElementById('auth-title');
             
-            if (!email || !password) {
-                showMessagePopup('Missing Information', 'Please enter both email and password', false);
-                return;
-            }
-
-            const user = validateUser(email, password);
-            if (!user) {
-                showMessagePopup('Login Failed', 'Invalid email or password', false);
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'login', email, password })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentUserId = user.userId;
-                    userCredits = user.credits;
-                    userEmail = email;
-                    
-                    localStorage.setItem('navai_userId', currentUserId);
-                    localStorage.setItem('navai_credits', userCredits);
-                    localStorage.setItem('navai_email', email);
-                    
-                    document.body.removeChild(popup);
-                    updateCreditDisplay();
-                    updateAuthUI();
-                    showMessagePopup('Welcome Back! 👋', `You have ${userCredits} credits ready to use!`);
-                } else {
-                    showMessagePopup('Login Failed', data.message, false);
-                }
-            } catch (error) {
-                showMessagePopup('Login Error', 'Could not log in. Please try again.', false);
-            }
-        });
-
-        qs('#signupBtnMain').addEventListener('click', () => {
-            document.body.removeChild(popup);
-            showSignupPopup();
-        });
-
-        popup.addEventListener('click', (e) => {
-            if (e.target === popup) {
-                document.body.removeChild(popup);
-            }
-        });
+            if (submitBtn) submitBtn.textContent = 'Login';
+            if (switchBtn) switchBtn.textContent = 'Don\'t have an account? Sign Up';
+            if (title) title.textContent = 'Login to Your Account';
+            
+            document.getElementById('auth-message').style.display = 'none';
+        } else {
+            window.location.href = 'index.html';
+        }
     }
 
     function showAccountMenu() {
@@ -464,7 +287,6 @@ function handleOneTimeClick() {
         });
     }
 
-    // OLD WORKING GENERATE FUNCTION - matches the old api/generate.js
     function initGenerate() {
         const generateBtn = qs('#generateBtn');
         const promptBox = qs('#prompt-box');
@@ -512,48 +334,56 @@ function handleOneTimeClick() {
             setLoading(true);
             
             try {
-                // OLD WORKING VERSION - only sends { prompt } and expects { imageUrl }
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ prompt }) // Only prompt, no userId
+                    body: JSON.stringify({ prompt, userId: currentUserId }),
+                    signal: controller.signal
                 });
-                
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Generation failed');
+                }
+
                 const data = await response.json();
                 
-                if (!response.ok) throw new Error(data.error || 'Generation failed');
-
-                // OLD VERSION: Expects imageUrl directly
-                if (data.imageUrl) {
-                    if (placeholderText) placeholderText.style.display = 'none';
-                    const img = document.createElement('img');
-                    img.id = 'output-image';
-                    img.src = data.imageUrl;
-                    img.alt = 'Generated image: ' + prompt;
-                    img.style.cssText = '
-                        max-width: 100%;
-                        max-height: 500px;
-                        border-radius: 12px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    ';
-                    outputArea.appendChild(img);
-
-                    // Deduct credit locally
-                    userCredits = Math.max(0, userCredits - 1);
-                    localStorage.setItem('navai_credits', userCredits);
-                    updateCreditDisplay();
-                    showMessagePopup('Success! 🎉', `Image generated! You have ${userCredits} credits remaining.`);
-                } else {
+                if (!data.imageUrl) {
                     throw new Error('No image URL received from server');
                 }
+
+                console.log('Generated image URL:', data.imageUrl);
+                
+                userCredits = Math.max(0, userCredits - 1);
+                localStorage.setItem('navai_credits', userCredits);
+                updateUserCredits(currentUserId, userCredits);
+                updateCreditDisplay();
+                
+                if (placeholderText) placeholderText.style.display = 'none';
+                const img = document.createElement('img');
+                img.id = 'output-image';
+                img.src = data.imageUrl;
+                img.alt = 'Generated image: ' + prompt;
+                img.style.cssText = 'max-width: 100%; max-height: 500px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);';
+                outputArea.appendChild(img);
+
+                showMessagePopup('Success! 🎉', `Image generated! You have ${userCredits} credits remaining.`);
                 
             } catch (error) {
                 console.error('Generation error:', error);
-                showMessagePopup('Generation Failed', error.message || 'Failed to generate image. Please try again.', false);
-                
+                if (error.name === 'AbortError') {
+                    showMessagePopup('Generation Timeout', 'Image generation is taking longer than expected. Please check your Replicate dashboard.', false);
+                } else {
+                    showMessagePopup('Generation Failed', error.message, false);
+                }
                 if (placeholderText) {
+                    placeholderText.textContent = 'Failed to generate. Please try again.';
                     placeholderText.style.display = 'block';
-                    placeholderText.textContent = 'Your generated image will appear here';
                 }
             } finally {
                 setLoading(false);
