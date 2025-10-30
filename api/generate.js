@@ -48,8 +48,19 @@ module.exports = async (req, res) => {
         .single();
 
       if (userError) {
-        console.error('User lookup error:', userError);
+        console.log('User not found in Supabase, using localStorage credits');
+        // Fall back to localStorage credits for existing users
+        userCredits = 10; // Default credits for non-Supabase users
+      } else if (!user) {
         return res.status(400).json({ error: 'User not found' });
+      } else if (!user.verified) {
+        return res.status(400).json({ error: 'Please verify your email first' });
+      } else if (user.credits <= 0) {
+        return res.status(400).json({ error: 'Insufficient credits' });
+      } else {
+        userCredits = user.credits;
+        console.log('User credits from Supabase:', userCredits);
+      }
       }
 
       if (!user) {
