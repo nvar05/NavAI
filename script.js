@@ -121,6 +121,11 @@ function handleOneTimeClick() {
                 updateUserCredits(userId, newCredits);
                 userCredits = newCredits;
                 localStorage.setItem('navai_credits', newCredits);
+                fetch('/api/update-credits', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({userId: userId, creditsToAdd: creditsToAdd})
+                }).catch(err => console.log('Supabase update failed', err));
                 updateCreditDisplay();
                 updateAuthUI();
                 
