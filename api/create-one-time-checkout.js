@@ -24,7 +24,7 @@ module.exports = async (req, res) => {
         },
       ],
       mode: 'payment',
-      success_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${domain}/success.html?payment_success=truesuccess_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,plan=onetimesuccess_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,user_id=${req.body.userId}`,
       cancel_url: `${domain}/plans.html`,
     });
 

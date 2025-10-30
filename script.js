@@ -99,6 +99,25 @@ function handleOneTimeClick() {
                 const currentCredits = getUserCredits(userId);
                 const newCredits = currentCredits + creditsToAdd;
                 
+                // Update credits in Supabase database
+                fetch('/api/update-credits', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        userId: userId,
+                        creditsToAdd: creditsToAdd
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) {
+                        console.error('Failed to update database credits:', data.error);
+                    } else {
+                        console.log('Database credits updated to:', data.newCredits);
+                    }
+                })
+                .catch(err => console.error('Database update error:', err));
+                
                 updateUserCredits(userId, newCredits);
                 userCredits = newCredits;
                 localStorage.setItem('navai_credits', newCredits);
