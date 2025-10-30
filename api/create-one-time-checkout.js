@@ -12,7 +12,6 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Stripe not configured' });
     }
 
-    // Use www subdomain which works
     const domain = 'https://www.nav-ai.co.uk';
     
     const session = await stripe.checkout.sessions.create({
@@ -24,7 +23,7 @@ module.exports = async (req, res) => {
         },
       ],
       mode: 'payment',
-      success_url: `${domain}/success.html?payment_success=truesuccess_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,plan=onetimesuccess_url: `${domain}/success.html?session_id={CHECKOUT_SESSION_ID}`,user_id=${req.body.userId}`,
+      success_url: `${domain}/success.html?payment_success=true&plan=onetime&user_id=${req.body.userId}`,
       cancel_url: `${domain}/plans.html`,
     });
 
