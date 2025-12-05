@@ -45,10 +45,7 @@ module.exports = async (req, res) => {
       if (userId && userCredits !== null && userCredits !== 10) {
         await supabase.from('users').update({ credits: userCredits - 1 }).eq('id', userId);
       }
-        const imageResponse = await fetch(result.output[0], { headers: { "Authorization": `Token ${process.env.REPLICATE_API_TOKEN}` } });
-  const imageBuffer = await imageResponse.arrayBuffer();
-  const base64Image = Buffer.from(imageBuffer).toString("base64");
-  return res.json({ imageUrl: `data:image/png;base64,${base64Image}`, creditsUsed: (userId return res.json({ imageUrl: result.output[0], creditsUsed: (userId && userCredits !== null && userCredits !== 10) ? 1 : 0 });return res.json({ imageUrl: result.output[0], creditsUsed: (userId && userCredits !== null && userCredits !== 10) ? 1 : 0 }); userCredits !== null return res.json({ imageUrl: result.output[0], creditsUsed: (userId && userCredits !== null && userCredits !== 10) ? 1 : 0 });return res.json({ imageUrl: result.output[0], creditsUsed: (userId && userCredits !== null && userCredits !== 10) ? 1 : 0 }); userCredits !== 10) ? 1 : 0 });
+      return res.json({ imageUrl: result.output[0], creditsUsed: (userId && userCredits !== null && userCredits !== 10) ? 1 : 0 });
     } else {
       throw new Error('AI generation failed or timeout');
     }
